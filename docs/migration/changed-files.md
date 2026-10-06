@@ -1,6 +1,6 @@
-# File migrasi yang ditambah/dipindahkan
+# File project migrasi HEDGE
 
-Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen analisis dipindahkan; source web tetap di repository semula. Daftar ini mencakup source, dokumentasi, runner dan preview; cache build/APK dikecualikan. Perubahan sesi design system dirinci di [design-system-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/design-system-changes.md>); perubahan alarm source 2.0.2 tanpa build APK dirinci di [alarm-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/alarm-changes.md>).
+Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Cache build dan APK dikecualikan. Perubahan desain ada di [design-system-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/design-system-changes.md>), alarm awal di [alarm-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/alarm-changes.md>), dan source 2.0.3 di [overlay-tts.md](<D:/MINE/HEDGE-FLUTTER/docs/overlay-tts.md>).
 
 - [.gitignore](<D:/MINE/HEDGE-FLUTTER/.gitignore>)
 - [.metadata](<D:/MINE/HEDGE-FLUTTER/.metadata>)
@@ -11,7 +11,12 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [android/app/src/debug/AndroidManifest.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/debug/AndroidManifest.xml>)
 - [android/app/src/main/AndroidManifest.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/AndroidManifest.xml>)
 - [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmActivity.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmActivity.kt>)
+- [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmDeliveryService.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmDeliveryService.kt>)
 - [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmEngine.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmEngine.kt>)
+- [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmOverlay.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmOverlay.kt>)
+- [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechPlayer.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechPlayer.kt>)
+- [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechText.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechText.kt>)
+- [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSurface.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSurface.kt>)
 - [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmTimeline.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmTimeline.kt>)
 - [android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/MainActivity.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/kotlin/id/mikrotrans/hedge/hedge_flutter/MainActivity.kt>)
 - [android/app/src/main/res/drawable-v21/launch_background.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/res/drawable-v21/launch_background.xml>)
@@ -27,6 +32,7 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [android/app/src/main/res/values-night/styles.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/res/values-night/styles.xml>)
 - [android/app/src/main/res/values/styles.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/main/res/values/styles.xml>)
 - [android/app/src/profile/AndroidManifest.xml](<D:/MINE/HEDGE-FLUTTER/android/app/src/profile/AndroidManifest.xml>)
+- [android/app/src/test/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechTextTest.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/test/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmSpeechTextTest.kt>)
 - [android/app/src/test/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmTimelineTest.kt](<D:/MINE/HEDGE-FLUTTER/android/app/src/test/kotlin/id/mikrotrans/hedge/hedge_flutter/AlarmTimelineTest.kt>)
 - [android/build.gradle.kts](<D:/MINE/HEDGE-FLUTTER/android/build.gradle.kts>)
 - [android/gradle.properties](<D:/MINE/HEDGE-FLUTTER/android/gradle.properties>)
@@ -38,6 +44,8 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [assets/hedge-logo.jpg](<D:/MINE/HEDGE-FLUTTER/assets/hedge-logo.jpg>)
 - [docs/alarm-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/alarm-changes.md>)
 - [docs/alarms.md](<D:/MINE/HEDGE-FLUTTER/docs/alarms.md>)
+- [docs/build-2026-10-06.md](<D:/MINE/HEDGE-FLUTTER/docs/build-2026-10-06.md>)
+- [docs/build-2.0.3-2026-10-06.md](<D:/MINE/HEDGE-FLUTTER/docs/build-2.0.3-2026-10-06.md>)
 - [docs/design-system-changes.md](<D:/MINE/HEDGE-FLUTTER/docs/design-system-changes.md>)
 - [docs/design-system.md](<D:/MINE/HEDGE-FLUTTER/docs/design-system.md>)
 - [docs/legacy/app.js](<D:/MINE/HEDGE-FLUTTER/docs/legacy/app.js>)
@@ -48,6 +56,7 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [docs/migration/legacy-scheduler-reference.json](<D:/MINE/HEDGE-FLUTTER/docs/migration/legacy-scheduler-reference.json>)
 - [docs/migration/scheduler-analysis.md](<D:/MINE/HEDGE-FLUTTER/docs/migration/scheduler-analysis.md>)
 - [docs/migration/verify-legacy-oracle.mjs](<D:/MINE/HEDGE-FLUTTER/docs/migration/verify-legacy-oracle.mjs>)
+- [docs/overlay-tts.md](<D:/MINE/HEDGE-FLUTTER/docs/overlay-tts.md>)
 - [docs/screenshots/dispatcher-1200-dark.png](<D:/MINE/HEDGE-FLUTTER/docs/screenshots/dispatcher-1200-dark.png>)
 - [docs/screenshots/dispatcher-1200-light.png](<D:/MINE/HEDGE-FLUTTER/docs/screenshots/dispatcher-1200-light.png>)
 - [docs/screenshots/dispatcher-360-dark.png](<D:/MINE/HEDGE-FLUTTER/docs/screenshots/dispatcher-360-dark.png>)
@@ -113,6 +122,7 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [pubspec.lock](<D:/MINE/HEDGE-FLUTTER/pubspec.lock>)
 - [pubspec.yaml](<D:/MINE/HEDGE-FLUTTER/pubspec.yaml>)
 - [README.md](<D:/MINE/HEDGE-FLUTTER/README.md>)
+- [test/alarm_permissions_test.dart](<D:/MINE/HEDGE-FLUTTER/test/alarm_permissions_test.dart>)
 - [test/alarm_test.dart](<D:/MINE/HEDGE-FLUTTER/test/alarm_test.dart>)
 - [test/design_system_test.dart](<D:/MINE/HEDGE-FLUTTER/test/design_system_test.dart>)
 - [test/repository_test.dart](<D:/MINE/HEDGE-FLUTTER/test/repository_test.dart>)
@@ -137,4 +147,3 @@ Project native berada di D:/MINE/HEDGE-FLUTTER pada branch **devmode**. Dokumen 
 - [windows/runner/utils.h](<D:/MINE/HEDGE-FLUTTER/windows/runner/utils.h>)
 - [windows/runner/win32_window.cpp](<D:/MINE/HEDGE-FLUTTER/windows/runner/win32_window.cpp>)
 - [windows/runner/win32_window.h](<D:/MINE/HEDGE-FLUTTER/windows/runner/win32_window.h>)
-- [docs/build-2026-10-06.md](<D:/MINE/HEDGE-FLUTTER/docs/build-2026-10-06.md>)

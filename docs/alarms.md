@@ -1,6 +1,6 @@
-# Alarm HEDGE — source 2.0.2
+# Alarm HEDGE — source 2.0.3
 
-Aturan user: **LAKUKAN BUILD APK HANYA KETIKA SAYA PERINTAHKAN.** Aturan disimpan di AGENTS.md kedua repository. APK dist **2.0.2** berhasil dibangun pada **2026-10-06** setelah perintah eksplisit user. Lihat [paket dan bukti build](build-2026-10-06.md). Sesi implementasi sebelumnya 2026-10-05 hanya mengubah source.
+Aturan user: **LAKUKAN BUILD APK HANYA KETIKA SAYA PERINTAHKAN.** Aturan disimpan di AGENTS.md kedua repository. APK dist terbaru **2.0.3** berhasil dibangun pada **2026-10-06** setelah perintah eksplisit user. Lihat [paket dan bukti build](build-2.0.3-2026-10-06.md). Paket sudah memuat overlay berizin dan TTS; lihat [keputusan dan panduan terbaru](overlay-tts.md).
 
 ## Pengaturan dispatcher
 
@@ -10,7 +10,7 @@ Di **Jadwal → Atur**, setiap rute memiliki:
 | --- | --- |
 | Alarm rute | OFF membatalkan antrean dan alert aktif rute itu. ON mengaktifkan pengingat sesuai konfigurasi dan jadwal tersimpan. |
 | Banner notifikasi | Memilih tampilan notifikasi biasa. |
-| Alert layar penuh | Mengaktifkan Activity alarm native Android. Memerlukan notifikasi sistem sebagai pembawa full-screen intent, sehingga Android tetap dapat memakai banner saat layar sedang digunakan. |
+| Alert layar penuh | Mengaktifkan Activity alarm native Android untuk HEDGE aktif/layar terkunci, serta overlay ketika aplikasi lain terbuka dan izin overlay diberikan. Tanpa izin overlay, Android dapat memilih banner saat layar digunakan. |
 | Pengingat sebelum berangkat | ON/OFF terpisah; lead time dapat diatur 1–300 detik. Nilai 0 dari data lama diperlakukan tanpa pengingat persiapan. |
 | Alarm saat waktunya berangkat | ON/OFF terpisah untuk event tepat pada jam rencana. |
 | Tutup alert otomatis | Durasi tampil 1–300 detik. Default mengikuti durasi rute yang tersimpan (8 detik pada data awal). |
@@ -43,11 +43,11 @@ Tombol native menulis tindakan ke antrean durable sebelum UI ditutup/notifikasi 
 | HEDGE sedang aktif | Receiver dapat membuka Activity alert secara langsung; izin sistem yang diperlukan tetap ditampilkan. |
 | Background / layar terkunci / proses dihentikan OS | Antrean AlarmManager dan Activity native tidak membutuhkan proses Dart lama. Tampilan penuh bergantung izin dan keputusan Android/vendor. |
 | Swipe dari recent apps | Pada Android standar tidak sama dengan Force Stop; perilaku vendor perlu diuji. |
-| Sedang menggunakan aplikasi lain | Android dapat memilih heads-up banner meskipun full-screen intent diaktifkan. [Android: time-sensitive notifications](https://developer.android.com/develop/ui/views/notifications/time-sensitive#ongoing-notification). |
+| Sedang menggunakan aplikasi lain | Source 2.0.3 menggunakan overlay jika izin tampil di atas aplikasi lain diberikan. Tanpa izin tersebut, Android dapat memilih heads-up banner meskipun full-screen intent diaktifkan. [Android: time-sensitive notifications](https://developer.android.com/develop/ui/views/notifications/time-sensitive#ongoing-notification). |
 | Force Stop dari pengaturan Android | Android menempatkan paket dalam stopped state dan membatalkan pending intents. Alarm tidak dapat dijamin sampai user membuka aplikasi lagi; saat dibuka queue didaftarkan kembali. [Android: stopped state](https://developer.android.com/about/versions/15/behavior-changes-all#stopped-state). |
 | Notifikasi/channel/full-screen/exact permission diblokir, perangkat mati atau pembatasan vendor | Aplikasi tidak mengesampingkan keputusan OS. Status izin membantu dispatcher memeriksa kondisi tersebut. |
 
-Karena batas ini, janji “selalu tampil dalam setiap jenis kill dan hanya berhenti saat OFF” tidak mungkin diberikan. Implementasi mengikuti izin Android, bukan overlay yang mengabaikan OS atau aplikasi lain.
+Karena batas ini, janji “selalu tampil dalam setiap jenis kill dan hanya berhenti saat OFF” tidak mungkin diberikan. Overlay pada source 2.0.3 menggunakan izin Android dan tetap tunduk pada pembatasan sistem.
 
 Pada iOS/Windows, alert penuh tersedia saat aplikasi aktif melalui fallback Flutter. Full-screen takeover di luar aplikasi tidak diklaim. iOS masih memakai 48 pengingat OS terdekat dan membutuhkan app aktif/resume untuk memperpanjang antrean.
 
@@ -65,7 +65,7 @@ cd android
 JAVA_TOOL_OPTIONS='-Djdk.net.unixdomain.tmpdir=D:/MINE/HEDGE-FLUTTER/.tmp -Djava.net.preferIPv4Stack=true' ./gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --console=plain
 ```
 
-Perintah terakhir mengompilasi Kotlin/resources/assets yang dibutuhkan tes dan menjalankan unit test; tidak menjalankan assemble/package APK. Perintah tes ini tidak menghasilkan APK. Build APK 2.0.2 terpisah dilakukan 2026-10-06 atas perintah user.
+Perintah terakhir mengompilasi Kotlin/resources/assets yang dibutuhkan tes dan menjalankan unit test; tidak menjalankan assemble/package APK. Perintah tes ini tidak menghasilkan APK. Build APK terbaru 2.0.3 terpisah dilakukan 2026-10-06 atas perintah user; analyzer, 52 tes Flutter, 16 tes Kotlin dan 53 pemeriksaan pnpm lulus untuk source tersebut.
 
-Verifikasi perangkat fisik tetap diperlukan setelah memasang APK 2.0.2: beri ketiga izin, buat jadwal dekat waktu sekarang, uji H-10/custom lead dan due saat foreground/background/layar terkunci, swipe recent, penghentian proses biasa, Force Stop lalu buka lagi, reboot/unlock, OFF, timeout, tombol aktual, DND/channel diblokir, mode hemat daya, beberapa rute bersamaan dan konfigurasi durasi pendek/panjang. Catat model HP, versi Android, izin, waktu aktual trigger serta hasilnya. Unit test/kompilasi bukan bukti hasil matriks runtime ini.
+Verifikasi perangkat fisik tetap diperlukan setelah memasang APK 2.0.3: beri izin notifikasi, alarm tepat, layar penuh dan overlay, buat jadwal dekat waktu sekarang, uji H-10/custom lead dan due saat foreground/background/layar terkunci, swipe recent, penghentian proses biasa, Force Stop lalu buka lagi, reboot/unlock, OFF, timeout, tombol aktual, DND/channel diblokir, mode hemat daya, beberapa rute bersamaan dan konfigurasi durasi pendek/panjang. Catat model HP, versi Android, izin, waktu aktual trigger serta hasilnya. Unit test/kompilasi bukan bukti hasil matriks runtime ini.
 Hasil 2026-10-05: analyzer **No issues found**, Flutter **50/50 PASS**, Kotlin compile/unit test **8/8 PASS**, harness pnpm **53/53 PASS**, branch kedua repository **devmode**. Widget full-screen diuji pada 320×640 dengan teks 160% di tema gelap/terang. Hash APK dist 2.0.1 tetap sama. [Status lengkap](<D:/MINE/HEDGE-FLUTTER/docs/migration/implementation-status.md>) dan [daftar perubahan](<D:/MINE/HEDGE-FLUTTER/docs/alarm-changes.md>) memisahkan bukti source dari matriks perangkat yang belum diuji.

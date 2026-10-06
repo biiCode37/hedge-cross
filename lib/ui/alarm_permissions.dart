@@ -29,10 +29,27 @@ class AlarmPermissionPanel extends StatelessWidget {
           valueListenable: service.device,
           builder: (context, d, _) => Column(
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('TTS: ${d.speechStatus}'),
+              ),
+              if (d.alarmVolumeMax > 0)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Volume Alarm Android: ${d.alarmVolume}/${d.alarmVolumeMax}. HEDGE mengikuti volume ini.',
+                  ),
+                ),
+              if (d.audioIssue.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(d.audioIssue),
+                ),
               for (final item in [
                 ('Notifikasi', d.notifications),
                 ('Alarm tepat', d.exact),
                 ('Layar penuh', d.fullScreen),
+                ('Di atas aplikasi lain', d.overlay),
               ])
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -59,6 +76,30 @@ class AlarmPermissionPanel extends StatelessWidget {
       ),
       if (service.isAndroid) ...[
         OutlinedButton.icon(
+          onPressed: () => service.openPermission('overlay'),
+          icon: const Icon(Icons.layers_outlined),
+          label: const Text('Izinkan tampil di atas aplikasi lain'),
+        ),
+        OutlinedButton.icon(
+          onPressed: service.testSpeech,
+          icon: const Icon(Icons.record_voice_over_outlined),
+          label: const Text('Uji suara TTS'),
+        ),
+        TextButton(
+          onPressed: service.stopSpeechTest,
+          child: const Text('Hentikan uji suara'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => service.openPermission('tts'),
+          icon: const Icon(Icons.settings_voice_outlined),
+          label: const Text('Pengaturan suara Bahasa Indonesia'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => service.openPermission('sound'),
+          icon: const Icon(Icons.volume_up_outlined),
+          label: const Text('Pengaturan volume Android'),
+        ),
+        OutlinedButton.icon(
           onPressed: () => service.openPermission('exact'),
           icon: const Icon(Icons.alarm),
           label: const Text('Izin alarm tepat'),
@@ -75,7 +116,7 @@ class AlarmPermissionPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Atur waktu, durasi, banner dan layar penuh di Jadwal → Atur. Saat layar terkunci, Android dapat membuka alert penuh. Saat memakai app lain, Android dapat memilih banner. Force Stop membatalkan alarm sampai HEDGE dibuka kembali.',
+          'Aktifkan izin di atas aplikasi lain untuk alert ketika memakai app lain. Layar terkunci memakai izin alert layar penuh. TTS memakai suara Bahasa Indonesia offline yang tersedia di perangkat. Atur durasi di Jadwal → Atur. Force Stop membatalkan alarm sampai HEDGE dibuka kembali.',
           style: TextStyle(fontSize: 12),
         ),
       ],

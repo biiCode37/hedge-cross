@@ -96,3 +96,17 @@ Ketiga APK debug split ABI **2.0.2** berhasil dibangun dari source 2.0.2+3, lalu
 `pnpm run verify:legacy` kembali **53/53 PASS**; kedua repository tetap **devmode**. Source aplikasi tidak berubah, sehingga bukti 50 tes Flutter/8 Kotlin/analyzer dan kedua tema 2026-10-05 tetap merupakan pemeriksaan source sebelumnya. Tidak mengulang tes tersebut, tidak memasang APK atau mengklaim uji fisik alarm. Percobaan awal build gagal DNS GitHub saat SQLite mengambil binary resmi; DNS pulih dan build ulang berhasil tanpa perubahan dependency.
 
 Paket dist kini **2.0.2**, menggantikan 2.0.1. Riwayat checksum/hasil tanpa build pada bagian sebelumnya tetap merujuk sesi 2026-10-05. [Laporan build, hash dan daftar file terkini](<D:/MINE/HEDGE-FLUTTER/docs/build-2026-10-06.md>) mencatat hasil 2026-10-06. Aturan build hanya atas perintah eksplisit user tetap berlaku untuk build berikutnya.
+
+## Riwayat verifikasi source 2.0.3+4 — sebelum perintah build
+
+User menyetujui izin tampil di atas aplikasi lain, dua kalimat TTS Indonesia, aturan unit belasan/puluhan, serta pengelompokan dua digit terakhir untuk pola ambigu. Pilihan volume adalah **B: mengikuti volume Alarm Android tanpa mengubahnya**. Implementasi menambahkan layanan native sementara, overlay berizin dengan UI bersama Activity, suara TTS offline, penghentian audio sesuai status alarm, diagnosis volume dan tombol uji suara. Notifikasi baru tidak memutar ringtone bawaan. Alarm asli mengambil prioritas di atas preview suara.
+
+Verifikasi final: **52/52 Flutter**, **16/16 Kotlin**, **53/53 legacy pnpm**, analyzer **No issues found**, branch kedua repository **devmode**. Widget panel izin diuji gelap/terang pada 320×640 dengan teks 160%; runtime overlay/native TTS dan loudness HP belum diuji. Tidak ada APK baru dibangun. Ketiga paket dist 2.0.2 tetap cocok dengan checksum sebelumnya dan belum memuat source 2.0.3.
+
+[Keputusan, contoh angka, arsitektur, batas verifikasi dan daftar file](<D:/MINE/HEDGE-FLUTTER/docs/overlay-tts.md>) mendokumentasikan perbaikan ini. Build berikutnya tetap menunggu perintah eksplisit user.
+
+## Build terbaru 2.0.3 — 2026-10-06
+
+User memerintahkan melanjutkan pekerjaan yang terjeda dan membangun APK terbaru. Build debug split ABI dari source 2.0.3+4 berhasil (exit 0). Ketiga paket dist sekarang **2.0.3**, memuat overlay/TTS di atas, dengan code ARM64 **2004**, ARM32 **1004**, x64 **4004**. Signature v2 valid; sertifikat sama dengan APK 2.0.2. Manifest, library SQLite, font/logo dan checksum output serta salinan dist terverifikasi.
+
+Source final sebelumnya lulus analyzer, **52 Flutter**, **16 Kotlin**, **53 legacy pnpm**, termasuk tema gelap/terang pada panel izin. Kedua repository tetap **devmode**. Tidak install, commit atau publish. Uji loudness, overlay dan TTS di HP fisik belum dilakukan. [APK, checksum, file berubah dan panduan uji](<D:/MINE/HEDGE-FLUTTER/docs/build-2.0.3-2026-10-06.md>) mencatat bukti terbaru. Build berikutnya tetap memerlukan perintah eksplisit user.

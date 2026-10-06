@@ -42,3 +42,9 @@ Aturan yang sama juga ditambahkan ke [AGENTS.md repository web](<D:/MINE/HEDGE/A
 Verifikasi: analyzer tanpa issue; **50 Flutter test**, **8 Kotlin test**, **53 karakterisasi legacy pnpm** lulus. Kotlin dikompilasi tanpa assemble/package APK. Tema gelap/terang diuji pada alert 320×640 dengan teks 160%. Kedua repository tetap devmode. Belum ada uji runtime HP fisik atau build APK fitur ini. [Status lengkap](<D:/MINE/HEDGE-FLUTTER/docs/migration/implementation-status.md>).
 
 Update **2026-10-06**: setelah perintah eksplisit user, APK 2.0.2 dibangun dan menggantikan paket dist 2.0.1. Source aplikasi tetap sama. Lihat [hasil dan verifikasi build](<D:/MINE/HEDGE-FLUTTER/docs/build-2026-10-06.md>).
+
+Source berikutnya **2.0.3+4** menambahkan overlay/TTS sesuai keputusan user; lihat [perubahan terbaru](<D:/MINE/HEDGE-FLUTTER/docs/overlay-tts.md>). APK 2.0.2 belum diperbarui pada sesi ini.
+
+## APK 2.0.3 — 2026-10-06
+
+Perbaikan [overlay dan TTS](<D:/MINE/HEDGE-FLUTTER/docs/overlay-tts.md>) sudah disertakan dalam ketiga APK dist 2.0.3 setelah perintah build terbaru user. [Laporan build, checksum dan file yang diperbarui](<D:/MINE/HEDGE-FLUTTER/docs/build-2.0.3-2026-10-06.md>) merupakan status terbaru; bagian sebelumnya adalah riwayat implementasi/build 2.0.2.

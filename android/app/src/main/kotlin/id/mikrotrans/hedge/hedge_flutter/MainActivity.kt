@@ -16,6 +16,8 @@ class MainActivity : FlutterActivity() {
                 try {
                     when (call.method) {
                         "replace" -> result.success(AlarmEngine.replace(this, JSONObject(call.arguments as String)))
+                        "testSpeech" -> { AlarmEngine.deliveryIssue(this, ""); AlarmDeliveryService.sync(this, preview = true); result.success(null) }
+                        "stopSpeechTest" -> { AlarmDeliveryService.stopPreview(); result.success(null) }
                         "status" -> result.success(AlarmEngine.status(this))
                         "readActions" -> result.success(AlarmEngine.pendingActions(this))
                         "acceptActions" -> {
@@ -31,6 +33,7 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume(); foreground = WeakReference(this)
         AlarmEngine.openWhenForeground(this)
+        AlarmDeliveryService.sync(this)
     }
     override fun onPause() {
         if (foreground?.get() === this) foreground = null

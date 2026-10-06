@@ -14,9 +14,17 @@ class AlarmDeviceStatus {
     this.notifications = false,
     this.exact = false,
     this.fullScreen = false,
+    this.overlay = false,
+    this.speechStatus = 'Belum diuji',
+    this.voice = '',
+    this.audioIssue = '',
+    this.alarmVolume = 0,
+    this.alarmVolumeMax = 0,
     this.pending = 0,
   });
-  final bool notifications, exact, fullScreen;
+  final bool notifications, exact, fullScreen, overlay;
+  final String speechStatus, voice, audioIssue;
+  final int alarmVolume, alarmVolumeMax;
   final int pending;
 }
 
@@ -93,6 +101,12 @@ class NotificationService {
       notifications: permission,
       exact: map['exact'] == true,
       fullScreen: map['fullScreen'] == true,
+      overlay: map['overlay'] == true,
+      speechStatus: map['speechStatus'] as String? ?? 'Belum diuji',
+      voice: map['voice'] as String? ?? '',
+      audioIssue: map['audioIssue'] as String? ?? '',
+      alarmVolume: map['alarmVolume'] as int? ?? 0,
+      alarmVolumeMax: map['alarmVolumeMax'] as int? ?? 0,
       pending: map['pending'] as int? ?? 0,
     );
     final d = device.value;
@@ -100,6 +114,7 @@ class NotificationService {
       if (!d.notifications) 'izin notifikasi',
       if (!d.exact) 'izin alarm tepat',
       if (!d.fullScreen) 'izin alert layar penuh',
+      if (!d.overlay) 'izin tampil di atas aplikasi lain',
       if ((map['restrictedChannels'] as int? ?? 0) > 0)
         'pemeriksaan kanal notifikasi yang dibatasi Android',
     ];
@@ -141,6 +156,25 @@ class NotificationService {
     } catch (error) {
       status.value = 'Pengaturan Android tidak bisa dibuka: $error';
     }
+  }
+
+  Future<void> testSpeech() async {
+    if (!isAndroid) return;
+    try {
+      await channel.invokeMethod<void>('testSpeech');
+      for (var i = 0; i < 4; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 750));
+        await refreshStatus();
+      }
+    } catch (error) {
+      status.value = 'Uji suara belum tersedia: $error';
+    }
+  }
+
+  Future<void> stopSpeechTest() async {
+    if (!isAndroid) return;
+    await channel.invokeMethod<void>('stopSpeechTest');
+    await refreshStatus();
   }
 
   Future<List<NativeAlarmAction>> readNativeActions() async {

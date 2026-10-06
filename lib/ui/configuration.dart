@@ -194,7 +194,7 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                       title: const Text('Alert layar penuh'),
                       value: fullScreen,
                       subtitle: const Text(
-                        'Dapat tampil di layar terkunci dengan izin Android. Saat memakai app lain, Android dapat menampilkan banner.',
+                        'Layar terkunci memakai izin layar penuh; saat memakai app lain, aktifkan izin tampil di atas aplikasi lain.',
                       ),
                       onChanged: (v) => setState(() => fullScreen = v),
                     ),
@@ -227,6 +227,9 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Suara alarm'),
+                      subtitle: const Text(
+                        'TTS Bahasa Indonesia mengikuti volume Alarm Android.',
+                      ),
                       value: sound,
                       onChanged: (v) => setState(() => sound = v),
                     ),

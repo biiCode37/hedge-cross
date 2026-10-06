@@ -2,7 +2,7 @@
 
 By Mikrotrans Utara. Migrasi native Android, iOS, dan Windows dari HEDGE web/PWA.
 
-Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru versi 2.0.2 (source 2.0.2+3), dibangun 2026-10-06 atas perintah eksplisit user. Lihat [laporan build](docs/build-2026-10-06.md). Build APK baru hanya dilakukan atas perintah eksplisit user. Aplikasi berada pada tahap uji internal: belum merupakan rilis produksi dan belum terhubung ke server.
+Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru **2.0.3+4 / 2.0.3** memuat overlay dan TTS sesuai [kesepakatan user](docs/overlay-tts.md). Ketiga APK dist dibangun 2026-10-06 setelah perintah eksplisit user. Lihat [paket dan bukti build terbaru](docs/build-2.0.3-2026-10-06.md). Build APK baru hanya dilakukan atas perintah eksplisit user. Aplikasi berada pada tahap uji internal: belum merupakan rilis produksi dan belum terhubung ke server.
 
 ## Mulai menggunakan
 
@@ -14,7 +14,7 @@ Android adalah target pertama. Paket siap uji tersedia di `dist/HEDGE-v2-trial-a
 4. Di **Jadwal → Atur**, pilih jam, ritase, peak dan preferensi alarm.
 5. **Buat jadwal** menghasilkan revisi tersimpan. Mengubah armada/pengaturan tidak mengubah baris revisi sebelumnya.
 6. **Jadwal → ⋯ → Hitung ulang sisa hari** mempertahankan rencana yang telah lewat dan menerapkan draft terbaru pada menit berikutnya. Histori rencana bukan bukti keberangkatan aktual.
-7. Ikon centang pada baris mencatat keberangkatan aktual. Tombol **Sudah Berangkat** pada alert APK 2.0.2 juga mencatat aktual; timeout hanya menutup alert.
+7. Ikon centang pada baris mencatat keberangkatan aktual. Tombol **Sudah Berangkat** pada alert juga mencatat aktual; timeout hanya menutup alert.
 8. **Papan** menampilkan keberangkatan gabungan atau rute aktif dan menjaga layar tetap menyala.
 9. **Jadwal → ⋯ → Ekspor jadwal** menyediakan TXT, clipboard, berbagi/WhatsApp, XLSX semua rute dan PDF. Shift dan nomor ritase awal berlaku konsisten pada semua format.
 10. Pengaturan menyediakan tema gelap/terang/sistem, backup JSON lengkap dengan histori, dan impor file/tempelan JSON.
@@ -74,7 +74,7 @@ Drift menggunakan custom SQL dalam `GeneratedDatabase`, SQLite native assets dan
 ## Batas versi uji
 
 - Semua data masih lokal. Outbox bertanda `local-only`; belum ada auth, server atau sinkronisasi antarperangkat.
-- Source 2.0.2 memakai antrean alarm native Android yang menyimpan semua event masa depan dan menjadwalkan ulang dari receiver. iOS masih memakai 48 pengingat terdekat dengan replenishment ketika app aktif/resume. APK 2.0.2 sudah memuat perubahan native ini; runtime perangkat fisik belum diuji. Lihat [alarm dan batas OS](docs/alarms.md).
+- Android memakai antrean alarm native yang menyimpan semua event masa depan dan menjadwalkan ulang dari receiver. APK 2.0.3 juga memuat overlay berizin dan TTS melalui volume Alarm Android. iOS masih memakai 48 pengingat terdekat dengan replenishment ketika app aktif/resume. Runtime perbaikan pada HP fisik belum diuji. Lihat [alarm dan batas OS](docs/alarms.md).
 - Android membutuhkan izin notifikasi dan izin exact alarm untuk waktu tepat. Tanpa exact alarm, OS menggunakan waktu perkiraan. Pembatasan baterai/vendor dan kondisi perangkat tetap harus diuji di perangkat fisik.
 - Peak yang menghasilkan batas waktu tidak konsisten/headway nol atau negatif ditolak; aturan versi lama yang bermasalah tidak direplikasi. Aturan konservatif ini dapat disesuaikan bersama pengguna setelah uji lapangan.
 - Layanan lintas tengah malam dan keberangkatan simultan dalam satu rute belum diaktifkan. Satu unit × satu ritase dijadwalkan pada jam mulai.

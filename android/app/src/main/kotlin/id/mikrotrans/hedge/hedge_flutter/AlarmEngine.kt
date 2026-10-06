@@ -3,7 +3,7 @@ package id.mikrotrans.hedge.hedge_flutter
 import android.app.*
 import android.content.*
 import android.media.AudioAttributes
-import android.media.RingtoneManager
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -104,13 +104,14 @@ object AlarmEngine {
                 a.event.departureId in strings(r.optJSONArray("departures")) && a.event.routeId !in disabled
             if (!valid) { cancel(c, a.event); null } else a.copy(event = a.event.copy(
                 fullScreen = r!!.optBoolean("fullScreen"), banner = r.optBoolean("banner"),
-                durationSeconds = r.optInt("durationSeconds", 8).coerceIn(1, 300), theme = payload.optString("theme", "dark")))
+                sound = r.optBoolean("sound", true), vibration = r.optBoolean("vibration", true), durationSeconds = r.optInt("durationSeconds", 8).coerceIn(1, 300), theme = payload.optString("theme", "dark")))
         }
         putActive(s, kept)
         s.put("plan", payload.getJSONArray("events"))
         // Completed IDs stay until the pending action is accepted by SQLite.
         val keepKeys = plan(s).map { it.key }.toSet() + kept.map { it.event.key }
         s.put("delivered", JSONArray(strings(s.optJSONArray("delivered")).filter { it in keepKeys }))
+        s.put("spoken", JSONArray(strings(s.optJSONArray("spoken")).filter { it in keepKeys }))
         val unaccepted = objects(s.optJSONArray("actions")).filter { it.optString("kind") == "departed" }.map { it.optString("departureId") }.toSet()
         val actualInSQLite = strings(payload.optJSONArray("actual"))
         s.put("completed", JSONArray(AlarmTimeline.retainCompleted(strings(s.optJSONArray("completed")), unaccepted, actualInSQLite).toList()))
@@ -151,18 +152,19 @@ object AlarmEngine {
         for (item in toShow) show(c, item)
         rearm(c, s, reboot)
         if (toShow.any { it.event.fullScreen }) openWhenForeground(c)
+        AlarmDeliveryService.sync(c)
     }
     private fun show(c: Context, a: ActiveAlarm) {
         val e = a.event
         if (!manager(c).areNotificationsEnabled()) return
-        val channelId = "hedge_alarm_v2_${if (e.fullScreen) "full" else "banner"}_${if (e.sound) "sound" else "silent"}_${if (e.vibration) "vibrate" else "still"}"
+        val channelId = "hedge_alarm_v3_${if (e.fullScreen) "full" else "banner"}_${if (e.sound) "sound" else "silent"}_${if (e.vibration) "vibrate" else "still"}"
         val audio = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(channelId, if (e.fullScreen) "Alert keberangkatan layar penuh" else "Banner keberangkatan",
                 NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Pengingat dispatcher HEDGE; suara/getar mengikuti pengaturan rute."
-                setSound(if (e.sound) RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) else null, audio)
+                setSound(null, audio)
                 enableVibration(e.vibration); lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             manager(c).createNotificationChannel(channel)
@@ -178,13 +180,13 @@ object AlarmEngine {
         if (e.fullScreen && canFullScreen(c)) builder.setFullScreenIntent(open, true)
         if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(e.durationSeconds * 1000L)
         else {
-            if (e.sound) builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), audio)
+            builder.setSound(null)
             if (e.vibration) builder.setVibrate(longArrayOf(0, 300, 150, 300))
         }
         try { manager(c).notify("hedge:${e.key}", 1, builder.build()) }
         catch (_: SecurityException) { /* OS permission revoked; foreground Activity still works. */ }
     }
-    @Synchronized fun visible(c: Context): List<ActiveAlarm> = AlarmTimeline.visible(active(load(c)), System.currentTimeMillis())
+    @Synchronized fun visible(c: Context): List<ActiveAlarm> = AlarmTimeline.visible(current(c), System.currentTimeMillis())
     fun openWhenForeground(c: Context) {
         val activity = MainActivity.foreground?.get() ?: return
         if (visible(c).isNotEmpty() && !activity.isFinishing) activity.startActivity(Intent(c, AlarmActivity::class.java))
@@ -202,6 +204,7 @@ object AlarmEngine {
         val removed = active(s).filter { it.event.departureId == event.departureId }
         putActive(s, active(s).filter { it.event.departureId != event.departureId })
         save(c, s); removed.forEach { cancel(c, it.event) }; rearm(c, s, true)
+        AlarmDeliveryService.refreshIfRunning()
     }
     @Synchronized fun disableRoute(c: Context, routeId: String) {
         val s = load(c)
@@ -214,6 +217,7 @@ object AlarmEngine {
         val removed = active(s).filter { it.event.routeId == routeId }
         putActive(s, active(s).filter { it.event.routeId != routeId })
         save(c, s); removed.forEach { cancel(c, it.event) }; rearm(c, s, true)
+        AlarmDeliveryService.refreshIfRunning()
     }
     @Synchronized fun pendingActions(c: Context): String = (load(c).optJSONArray("actions") ?: JSONArray()).toString()
     @Synchronized fun acceptActions(c: Context, ids: Set<String>) {
@@ -221,15 +225,48 @@ object AlarmEngine {
         s.put("actions", JSONArray(objects(s.optJSONArray("actions")).filter { it.getString("id") !in ids }))
         save(c, s)
     }
+    private var snapshotRaw: String? = null
+    private var snapshotActive = emptyList<ActiveAlarm>()
+    private var snapshotSpoken = emptySet<String>()
+    private fun readPresentationSnapshot(c: Context) {
+        val raw = prefs(c).getString(STATE, "{}") ?: "{}"
+        if (raw != snapshotRaw) {
+            val state = JSONObject(raw)
+            snapshotActive = active(state)
+            snapshotSpoken = strings(state.optJSONArray("spoken"))
+            snapshotRaw = raw
+        }
+    }
+    @Synchronized fun current(c: Context): List<ActiveAlarm> {
+        readPresentationSnapshot(c)
+        return snapshotActive.filter { it.expiresAt > System.currentTimeMillis() }
+    }
+    @Synchronized fun spoken(c: Context): Set<String> { readPresentationSnapshot(c); return snapshotSpoken }
+    @Synchronized fun markSpoken(c: Context, key: String) {
+        val s = load(c)
+        val spoken = strings(s.optJSONArray("spoken"))
+        if (spoken.add(key)) { s.put("spoken", JSONArray(spoken.toList())); save(c, s) }
+    }
+    private fun diagnostics(c: Context) = c.getSharedPreferences("hedge_alarm_diagnostics", Context.MODE_PRIVATE)
+    fun deliveryIssue(c: Context, message: String) {
+        if (diagnostics(c).getString("issue", "") != message) diagnostics(c).edit().putString("issue", message).apply()
+    }
+    fun speechStatus(c: Context, status: String, voice: String) {
+        diagnostics(c).edit().putString("speechStatus", status).putString("voice", voice).apply()
+    }
     @Synchronized fun status(c: Context): Map<String, Any> {
         val s = load(c)
         val delivered = strings(s.optJSONArray("delivered"))
         val completed = strings(s.optJSONArray("completed"))
         val disabled = strings(s.optJSONArray("disabled"))
         val restricted = if (Build.VERSION.SDK_INT >= 26) manager(c).notificationChannels.count {
-            it.id.startsWith("hedge_alarm_v2_") && it.importance < NotificationManager.IMPORTANCE_HIGH
+            it.id.startsWith("hedge_alarm_v3_") && it.importance < NotificationManager.IMPORTANCE_HIGH
         } else 0
-        return mapOf("restrictedChannels" to restricted, "notifications" to manager(c).areNotificationsEnabled(), "exact" to canExact(c),
+        val audioManager = c.getSystemService(AudioManager::class.java)
+        return mapOf("overlay" to Settings.canDrawOverlays(c), "speechStatus" to (diagnostics(c).getString("speechStatus", "Belum diuji") ?: ""),
+            "voice" to (diagnostics(c).getString("voice", "") ?: ""), "audioIssue" to (diagnostics(c).getString("issue", "") ?: ""),
+            "alarmVolume" to audioManager.getStreamVolume(AudioManager.STREAM_ALARM), "alarmVolumeMax" to audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+            "restrictedChannels" to restricted, "notifications" to manager(c).areNotificationsEnabled(), "exact" to canExact(c),
             "fullScreen" to canFullScreen(c), "pending" to plan(s).count {
                 it.key !in delivered && it.departureId !in completed && it.routeId !in disabled && it.at > System.currentTimeMillis()
             })
@@ -237,6 +274,9 @@ object AlarmEngine {
     fun permissionSettings(activity: Activity, kind: String) {
         val data = Uri.parse("package:${activity.packageName}")
         val intent = when (kind) {
+            "overlay" -> Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, data)
+            "tts" -> Intent("com.android.settings.TTS_SETTINGS")
+            "sound" -> Intent(Settings.ACTION_SOUND_SETTINGS)
             "exact" -> if (Build.VERSION.SDK_INT >= 31) Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, data) else null
             "fullScreen" -> if (Build.VERSION.SDK_INT >= 34) Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, data) else null
             else -> if (Build.VERSION.SDK_INT >= 26) Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
