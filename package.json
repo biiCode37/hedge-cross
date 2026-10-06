@@ -1,0 +1,1 @@
+{"name":"hedge-flutter-legacy-oracle","private":true,"scripts":{"verify:legacy":"node docs/migration/verify-legacy-oracle.mjs"}}
