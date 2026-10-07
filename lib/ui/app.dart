@@ -15,6 +15,7 @@ import '../domain/models.dart';
 import 'configuration.dart';
 import 'design_system.dart';
 import 'dispatch_components.dart';
+import 'schedule_timeline.dart';
 import 'telemetry_bar.dart';
 import 'alarm_overlay.dart';
 import 'alarm_permissions.dart';
