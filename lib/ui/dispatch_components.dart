@@ -479,9 +479,11 @@ class CountdownIndicator extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = imminent ? p.amberInk : p.cyanInk;
     final label = due ? 'Waktu berangkat' : 'Menuju berangkat';
+    // Countdown sisa waktu: penuh (1.0) saat waktu tersisa >= 300s,
+    // menyusut mengikis ke 0.0 saat waktu mendekati dan mencapai 00:00 (due).
     final progress = due
-        ? 1.0
-        : (1.0 - (remaining.inSeconds.clamp(0, 300) / 300)).clamp(0.0, 1.0);
+        ? 0.0
+        : (remaining.inSeconds.clamp(0, 300) / 300).clamp(0.0, 1.0);
 
     final gaugeSize = large ? 160.0 : 114.0;
 
@@ -505,6 +507,7 @@ class CountdownIndicator extends ConsumerWidget {
                   pulse: pulse,
                   isDark: isDark,
                   isImminent: imminent,
+                  isDue: due,
                 ),
               ),
               Column(
@@ -559,6 +562,8 @@ class CountdownIndicator extends ConsumerWidget {
 }
 
 /// Custom painter untuk Centerpiece Circular HUD Countdown Gauge.
+/// Menampilkan busur sisa waktu (depleting clockwise) yang mengikis menuju titik 12 o'clock,
+/// serta pulsing warning glow saat waktu keberangkatan tiba (isDue).
 class CyberCircularGaugePainter extends CustomPainter {
   CyberCircularGaugePainter({
     required this.progress,
@@ -567,6 +572,7 @@ class CyberCircularGaugePainter extends CustomPainter {
     required this.pulse,
     required this.isDark,
     required this.isImminent,
+    required this.isDue,
   });
 
   final double progress;
@@ -575,6 +581,7 @@ class CyberCircularGaugePainter extends CustomPainter {
   final double pulse;
   final bool isDark;
   final bool isImminent;
+  final bool isDue;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -584,94 +591,115 @@ class CyberCircularGaugePainter extends CustomPainter {
 
     // Outer decorative segmented ring
     if (isDark) {
+      final ringColor = isDue ? HedgeTokens.amber : activeColor;
       final outerRingPaint = Paint()
-        ..color = activeColor.withValues(alpha: 0.18 + 0.12 * pulse)
-        ..strokeWidth = 1.2
+        ..color = ringColor.withValues(
+          alpha: isDue ? (0.35 + 0.3 * pulse) : (0.18 + 0.12 * pulse),
+        )
+        ..strokeWidth = isDue ? 2.0 : 1.2
         ..style = PaintingStyle.stroke;
       canvas.drawCircle(center, radius + strokeWidth * 0.7, outerRingPaint);
 
       // Radial dark background glow
       final bgGlowPaint = Paint()
-        ..color = activeColor.withValues(alpha: 0.04 + 0.03 * pulse)
+        ..color = ringColor.withValues(
+          alpha: isDue ? (0.08 + 0.06 * pulse) : (0.04 + 0.03 * pulse),
+        )
         ..style = PaintingStyle.fill;
       canvas.drawCircle(center, radius, bgGlowPaint);
     }
 
     // Circular background groove/track
+    final currentTrackColor = isDue
+        ? HedgeTokens.amber.withValues(alpha: 0.3 + 0.25 * pulse)
+        : trackColor;
     final trackPaint = Paint()
-      ..color = trackColor
+      ..color = currentTrackColor
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius, trackPaint);
 
-    // Glowing Neon Dual-Arc Effect
-    if (isDark) {
-      // Blur glow underlay
-      final glowPaint = Paint()
-        ..color = activeColor.withValues(alpha: 0.45 * pulse)
-        ..strokeWidth = strokeWidth + (4 * pulse)
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8 * pulse);
+    // Titik target finish di jam 12 (00:00 Waktu Berangkat)
+    final anchorPaint = Paint()
+      ..color = (isDue ? HedgeTokens.amber : activeColor).withValues(alpha: 0.6)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(center.dx, center.dy - radius), strokeWidth * 0.28, anchorPaint);
 
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        progress * 2 * math.pi,
-        false,
-        glowPaint,
-      );
+    // Busur Sisa Waktu (Depleting Clockwise menuju jam 12)
+    final elapsed = 1.0 - progress;
+    final startAngle = -math.pi / 2 + (elapsed * 2 * math.pi);
+    final sweepAngle = progress * 2 * math.pi;
 
-      // Amber counter-accent arc di kuadran atas/kanan untuk dual-glow otentik
-      final dualAccentColor = isImminent ? HedgeTokens.electricCyan : HedgeTokens.amber;
-      final dualArcPaint = Paint()
-        ..color = dualAccentColor.withValues(alpha: 0.4 + 0.3 * pulse)
-        ..strokeWidth = strokeWidth * 0.9
+    if (!isDue && progress > 0.01) {
+      // Glowing Neon Dual-Arc Effect
+      if (isDark) {
+        final glowPaint = Paint()
+          ..color = activeColor.withValues(alpha: 0.45 * pulse)
+          ..strokeWidth = strokeWidth + (4 * pulse)
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8 * pulse);
+
+        canvas.drawArc(
+          Rect.fromCircle(center: center, radius: radius),
+          startAngle,
+          sweepAngle,
+          false,
+          glowPaint,
+        );
+
+        // Counter-accent dual glow jika sisa waktu masih > 30%
+        if (progress > 0.3) {
+          final dualAccentColor =
+              isImminent ? HedgeTokens.electricCyan : HedgeTokens.amber;
+          final dualArcPaint = Paint()
+            ..color = dualAccentColor.withValues(alpha: 0.35 + 0.25 * pulse)
+            ..strokeWidth = strokeWidth * 0.9
+            ..strokeCap = StrokeCap.round
+            ..style = PaintingStyle.stroke;
+
+          canvas.drawArc(
+            Rect.fromCircle(center: center, radius: radius),
+            startAngle,
+            sweepAngle * 0.45,
+            false,
+            dualArcPaint,
+          );
+        }
+      }
+
+      // Solid Foreground Remaining Time Arc
+      final arcPaint = Paint()
+        ..color = activeColor
+        ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
 
-      // Busur amber di kuadran atas
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        math.pi * 0.45,
+        startAngle,
+        sweepAngle,
         false,
-        dualArcPaint,
+        arcPaint,
       );
-    }
 
-    // Solid Foreground Progress Arc
-    final arcPaint = Paint()
-      ..color = activeColor
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
+      // Head glowing node (jarum penghitung waktu yang bergerak searah jarum jam mengikis waktu)
+      if (progress < 0.98) {
+        final headX = center.dx + radius * math.cos(startAngle);
+        final headY = center.dy + radius * math.sin(startAngle);
 
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      progress * 2 * math.pi,
-      false,
-      arcPaint,
-    );
+        final headPaint = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(headX, headY), strokeWidth * 0.32, headPaint);
 
-    // Head glowing node at the tip of progress arc
-    if (progress > 0.02) {
-      final headAngle = -math.pi / 2 + (progress * 2 * math.pi);
-      final headX = center.dx + radius * math.cos(headAngle);
-      final headY = center.dy + radius * math.sin(headAngle);
-
-      final headPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(headX, headY), strokeWidth * 0.32, headPaint);
-
-      if (isDark) {
-        final headGlowPaint = Paint()
-          ..color = activeColor.withValues(alpha: 0.8)
-          ..style = PaintingStyle.fill
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * pulse);
-        canvas.drawCircle(Offset(headX, headY), strokeWidth * 0.6, headGlowPaint);
+        if (isDark) {
+          final headGlowPaint = Paint()
+            ..color = activeColor.withValues(alpha: 0.8)
+            ..style = PaintingStyle.fill
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * pulse);
+          canvas.drawCircle(Offset(headX, headY), strokeWidth * 0.6, headGlowPaint);
+        }
       }
     }
   }
@@ -681,7 +709,8 @@ class CyberCircularGaugePainter extends CustomPainter {
       oldDelegate.progress != progress ||
       oldDelegate.activeColor != activeColor ||
       oldDelegate.pulse != pulse ||
-      oldDelegate.isImminent != isImminent;
+      oldDelegate.isImminent != isImminent ||
+      oldDelegate.isDue != isDue;
 }
 
 class ScheduleDepartureTile extends StatelessWidget {
