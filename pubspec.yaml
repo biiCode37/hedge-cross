@@ -36,3 +36,7 @@ flutter:
         - asset: assets/fonts/roboto-regular.ttf
         - asset: assets/fonts/roboto-bold.ttf
           weight: 700
+    - family: Orbitron
+      fonts:
+        - asset: assets/fonts/orbitron.ttf
+

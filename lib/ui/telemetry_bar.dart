@@ -87,9 +87,10 @@ class _Pill extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
+              fontFamily: HedgeTokens.cyberFont,
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              letterSpacing: .3,
+              letterSpacing: .4,
               color: p.text,
               fontFeatures: HedgeTokens.numberFeatures,
             ),

@@ -13,10 +13,24 @@ abstract final class HedgeTokens {
   static const radius = 12.0;
   static const panelRadius = 20.0;
   static const hudRadius = 16.0;
+  static const cyberFont = 'Orbitron';
   static const space = 8.0;
   static const motion = Duration(milliseconds: 180);
   static const slideMotion = Duration(milliseconds: 200);
   static const numberFeatures = [FontFeature.tabularFigures()];
+
+  static List<BoxShadow> neonGlow(Color color, {double intensity = 1.0}) => [
+    BoxShadow(
+      color: color.withValues(alpha: (0.45 * intensity).clamp(0.0, 1.0)),
+      blurRadius: 16 * intensity,
+      spreadRadius: 1 * intensity,
+    ),
+    BoxShadow(
+      color: color.withValues(alpha: (0.2 * intensity).clamp(0.0, 1.0)),
+      blurRadius: 28 * intensity,
+      spreadRadius: 2 * intensity,
+    ),
+  ];
 }
 
 @immutable
@@ -53,7 +67,7 @@ class HedgePalette extends ThemeExtension<HedgePalette> {
     muted: Color(0xff94a3b8),
     border: Color(0xff2b394b),
     amberInk: HedgeTokens.amber,
-    cyanInk: HedgeTokens.cyan,
+    cyanInk: HedgeTokens.electricCyan,
     focusSurface: Color(0xff11212d),
     warningSurface: Color(0xff2c2011),
     success: Color(0xff34d399),

@@ -242,6 +242,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             2 => _order(route),
             _ => _routes(workspace),
           };
+    final p = context.hedge;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 74,
@@ -256,26 +257,85 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: 8),
-            const Expanded(
+            const SizedBox(width: 10),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'HEDGE',
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 2,
+                      fontSize: 18,
+                      color: p.text,
                     ),
                   ),
-                  Text('Headway Generator', style: TextStyle(fontSize: 11)),
-                  Text('By Mikrotrans Utara', style: TextStyle(fontSize: 10)),
+                  Text(
+                    'Headway Generator · By Mikrotrans Utara',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: p.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
         actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final now = ref.watch(clockProvider).value ?? DateTime.now();
+              final timeStr =
+                  '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} WIB';
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: p.cyanInk,
+                        fontFeatures: HedgeTokens.numberFeatures,
+                      ),
+                    ),
+                    if (route != null) ...[
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.warningSurface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: p.amberInk, width: 1),
+                        ),
+                        child: Text(
+                          route.name,
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: p.amberInk,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Papan keberangkatan',
             onPressed: workspace.routes.any((r) => r.schedule != null)
@@ -286,12 +346,12 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : null,
-            icon: const Icon(Icons.tv),
+            icon: const Icon(Icons.tv, size: 20),
           ),
           IconButton(
             tooltip: 'Pengaturan & backup',
             onPressed: () => _settings(workspace),
-            icon: const Icon(Icons.tune),
+            icon: const Icon(Icons.tune, size: 20),
           ),
         ],
       ),
@@ -474,7 +534,20 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
             child: focus != null
-                ? DepartureFocusPanel(focus: focus)
+                ? DepartureFocusPanel(
+                    focus: focus,
+                    onDispatch: () async {
+                      if (await controller.record(
+                        focus.revision,
+                        focus.departure,
+                        'departed',
+                      )) {
+                        toast(
+                          'Keberangkatan unit ${focus.departure.unitNumber} tercatat.',
+                        );
+                      }
+                    },
+                  )
                 : Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
