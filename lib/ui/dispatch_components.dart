@@ -7,6 +7,7 @@ import '../application/dispatch_focus.dart';
 import '../application/workspace_controller.dart';
 import '../domain/models.dart';
 import 'design_system.dart';
+import 'schedule_timeline.dart';
 
 class DepartureFocusPanel extends StatelessWidget {
   const DepartureFocusPanel({
@@ -41,7 +42,7 @@ class DepartureFocusPanel extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(large ? 24 : 16),
+          padding: EdgeInsets.all(large ? 24 : 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -90,7 +91,7 @@ class DepartureFocusPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final unit = Semantics(
@@ -126,7 +127,7 @@ class DepartureFocusPanel extends StatelessWidget {
                   if (stacked) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [unit, const SizedBox(height: 12), timer],
+                      children: [unit, const SizedBox(height: 10), timer],
                     );
                   }
                   return Row(
@@ -139,7 +140,7 @@ class DepartureFocusPanel extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 16,
                 runSpacing: 8,
@@ -367,107 +368,23 @@ class ScheduleDepartureTile extends StatelessWidget {
     required this.focused,
     required this.frozen,
     required this.onRecord,
+    this.isFirst = false,
+    this.isLast = false,
   });
   final Departure departure;
   final bool done, focused, frozen;
+  final bool isFirst, isLast;
   final VoidCallback onRecord;
   @override
   Widget build(BuildContext context) {
-    final p = context.hedge;
-    return RepaintBoundary(
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-        decoration: BoxDecoration(
-          color: focused ? p.focusSurface : p.surface,
-          borderRadius: BorderRadius.circular(HedgeTokens.radius),
-          border: Border.all(
-            color: focused ? p.cyanInk.withValues(alpha: .55) : p.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'UNIT',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                      color: p.muted,
-                    ),
-                  ),
-                  Text(
-                    departure.unitNumber,
-                    style: TextStyle(
-                      fontSize: 24,
-                      height: 1.1,
-                      fontWeight: FontWeight.w700,
-                      color: done ? p.muted : p.text,
-                      fontFeatures: HedgeTokens.numberFeatures,
-                    ),
-                  ),
-                  if (frozen)
-                    Text(
-                      'Histori rencana',
-                      style: TextStyle(fontSize: 11, color: p.muted),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatMinute(departure.minute),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: p.text,
-                      fontFeatures: HedgeTokens.numberFeatures,
-                    ),
-                  ),
-                  Text(
-                    'R${departure.round} · ${departure.nextGap == null ? 'Terakhir' : '${departure.nextGap} menit'}',
-                    style: TextStyle(fontSize: 12, color: p.muted),
-                  ),
-                  if (departure.peak)
-                    Text(
-                      'PEAK',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: p.cyanInk,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (done)
-              Semantics(
-                label: 'Keberangkatan aktual tercatat',
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Icon(Icons.check_circle, color: p.success),
-                ),
-              )
-            else
-              IconButton(
-                tooltip: 'Catat keberangkatan aktual',
-                onPressed: onRecord,
-                icon: Icon(Icons.check_circle_outline, color: p.muted),
-              ),
-          ],
-        ),
-      ),
+    return CyberTimelineTile(
+      departure: departure,
+      done: done,
+      focused: focused,
+      frozen: frozen,
+      isFirst: isFirst,
+      isLast: isLast,
+      onRecord: onRecord,
     );
   }
 }
