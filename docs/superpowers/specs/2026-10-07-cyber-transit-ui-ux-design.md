@@ -46,8 +46,37 @@ Menghindari "god file" dengan memecah antarmuka menjadi komponen terisolasi:
 
 ---
 
-## 3. Agenda Bagian Berikutnya
+## 3. Bagian 2: Logika Interaksi Live Capsule Hero & Transisi Satu Jempol (DIKUNCI)
+
+![Live Capsule Hero Interaction](file:///D:/MINE/HEDGE-FLUTTER/docs/superpowers/specs/assets/cyber-transit-hero-interaction.jpg)
+
+*Gambar 2: Interaksi Live Capsule Hero saat status 'WAKTU BERANGKAT', countdown amber glow di 00:00, dan tactile ripple pada tombol aksi satu jempol.*
+
+### 3.1 State Transisi Kartu Hero
+1. **State Normal / Countdown (`Idle`)**:
+   * Cincin waktu berputar fluida dengan warna Electric Cyan (`#00E5FF`).
+   * Label status: `KEBERANGKATAN BERIKUTNYA` dengan titik cyan solid.
+2. **State Segera / Persiapan (`Prep`)**:
+   * Menjelang waktu keberangkatan (misal < 60 detik), cincin mulai bergradasi ke Amber Glow lembut.
+3. **State Waktu Berangkat (`Due`)**:
+   * Saat jam/menit keberangkatan tercapai (`diff <= 0`), seluruh cincin waktu dan border frame kartu bertransformasi menjadi **Amber Glow Pulse** (`#FF9800`).
+   * Berdenyut halus setiap 1.5 detik menggunakan `TweenAnimationBuilder` ringan (*zero CPU overhead*).
+   * Teks waktu berubah menjadi `00:00 BERANGKAT`.
+
+### 3.2 Interaksi Tombol Satu Jempol & Transisi Meluncur (Slide-Away)
+1. **Ergonomi Jempol Ekstra Nyaman**:
+   * Tinggi sentuh minimal tombol adalah **54px** dengan lebar penuh kartu (`match-parent width`), memastikan dispatcher dapat menekan tombol secara instan dengan jempol kanan/kiri tanpa perlu presisi rumit.
+   * Menggunakan umpan balik getar taktil via `HapticFeedback.mediumImpact()` pada saat sentuhan pertama.
+2. **Animasi Meluncur (Slide-Away Dismissal)**:
+   * Begitu tombol ditekan, kartu hero melakukan transisi animasi meluncur ke kiri/bawah secara mulus (*Curve: `Curves.easeOutCubic`*, durasi *200ms*) langsung masuk ke baris riwayat ritase.
+   * Kartu jadwal keberangkatan berikutnya otomatis meluncur naik (*Slide-up Transition*) menggantikan posisi hero dalam satu gerakan fluida tanpa hentakan layar (*zero layout jump*).
+3. **Proteksi Anti-Double-Tap (Debounce 500ms)**:
+   * Tombol dinonaktifkan seketika setelah tap pertama untuk mencegah risiko tercatatnya ritase ganda akibat sentuhan cepat berulang di lapangan.
+
+---
+
+## 4. Agenda Bagian Berikutnya
 - [x] **Bagian 1: Arsitektur Komponen & Visual Design System** *(Disepakati & Dikunci)*
-- [ ] **Bagian 2: Logika Interaksi Live Capsule Hero & Transisi Satu Jempol (Slide-Away & Haptics)**
+- [x] **Bagian 2: Logika Interaksi Live Capsule Hero & Transisi Satu Jempol** *(Disepakati & Dikunci)*
 - [ ] **Bagian 3: Telemetry Bar & Cyber Timeline Schedule View**
 - [ ] **Bagian 4: Papan TV / Board Monitor Modern**
