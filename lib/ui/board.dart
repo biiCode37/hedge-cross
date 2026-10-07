@@ -207,37 +207,6 @@ class _BoardState extends ConsumerState<BoardScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: p.cyanInk.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: p.cyanInk.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.tv_rounded, size: 13, color: p.cyanInk),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'FIDS KIOSK',
-                                  style: TextStyle(
-                                    fontFamily: HedgeTokens.cyberFont,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: .8,
-                                    color: p.cyanInk,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     );
