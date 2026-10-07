@@ -4,6 +4,7 @@ import android.app.*
 import android.content.*
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -157,14 +158,12 @@ object AlarmEngine {
     private fun show(c: Context, a: ActiveAlarm) {
         val e = a.event
         if (!manager(c).areNotificationsEnabled()) return
-        val channelId = "hedge_alarm_v3_${if (e.fullScreen) "full" else "banner"}_${if (e.sound) "sound" else "silent"}_${if (e.vibration) "vibrate" else "still"}"
-        val audio = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+        val channelId = "hedge_alarm_v4_${if (e.fullScreen) "full" else "banner"}_${if (e.sound) "sound" else "silent"}_${if (e.vibration) "vibrate" else "still"}"
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(channelId, if (e.fullScreen) "Alert keberangkatan layar penuh" else "Banner keberangkatan",
                 NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Pengingat dispatcher HEDGE; suara/getar mengikuti pengaturan rute."
-                setSound(null, audio)
+                description = "Pengingat dispatcher HEDGE; peringatan suara dikelola terpadu oleh pemutar audio."
+                setSound(null, null)
                 enableVibration(e.vibration); lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             manager(c).createNotificationChannel(channel)
@@ -180,7 +179,6 @@ object AlarmEngine {
         if (e.fullScreen && canFullScreen(c)) builder.setFullScreenIntent(open, true)
         if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(e.durationSeconds * 1000L)
         else {
-            builder.setSound(null)
             if (e.vibration) builder.setVibrate(longArrayOf(0, 300, 150, 300))
         }
         try { manager(c).notify("hedge:${e.key}", 1, builder.build()) }
@@ -260,12 +258,14 @@ object AlarmEngine {
         val completed = strings(s.optJSONArray("completed"))
         val disabled = strings(s.optJSONArray("disabled"))
         val restricted = if (Build.VERSION.SDK_INT >= 26) manager(c).notificationChannels.count {
-            it.id.startsWith("hedge_alarm_v3_") && it.importance < NotificationManager.IMPORTANCE_HIGH
+            it.id.startsWith("hedge_alarm_v4_") && it.importance < NotificationManager.IMPORTANCE_HIGH
         } else 0
         val audioManager = c.getSystemService(AudioManager::class.java)
+        val streamVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val streamVolMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         return mapOf("overlay" to Settings.canDrawOverlays(c), "speechStatus" to (diagnostics(c).getString("speechStatus", "Belum diuji") ?: ""),
             "voice" to (diagnostics(c).getString("voice", "") ?: ""), "audioIssue" to (diagnostics(c).getString("issue", "") ?: ""),
-            "alarmVolume" to audioManager.getStreamVolume(AudioManager.STREAM_ALARM), "alarmVolumeMax" to audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+            "alarmVolume" to streamVol, "alarmVolumeMax" to streamVolMax,
             "restrictedChannels" to restricted, "notifications" to manager(c).areNotificationsEnabled(), "exact" to canExact(c),
             "fullScreen" to canFullScreen(c), "pending" to plan(s).count {
                 it.key !in delivered && it.departureId !in completed && it.routeId !in disabled && it.at > System.currentTimeMillis()

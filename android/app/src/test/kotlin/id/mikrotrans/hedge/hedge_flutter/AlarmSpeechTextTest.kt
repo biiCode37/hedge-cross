@@ -29,10 +29,39 @@ class AlarmSpeechTextTest {
         assertEquals("sembilan puluh", AlarmSpeechText.unit("90"))
         assertEquals("satu nol tujuh puluh", AlarmSpeechText.unit("1070"))
     }
+    @Test fun routeApprovedTwoDigitsRules() {
+        // Belasan tetap disebut belasan
+        assertEquals("JAK lima belas", AlarmSpeechText.route("JAK.15"))
+        assertEquals("JAK sebelas", AlarmSpeechText.route("JAK.11"))
+        assertEquals("JAK sembilan belas", AlarmSpeechText.route("JAK.19"))
+        // Puluhan dibaca puluhan
+        assertEquals("JAK sembilan puluh", AlarmSpeechText.route("JAK.90"))
+        assertEquals("JAK sepuluh", AlarmSpeechText.route("JAK.10"))
+        assertEquals("JAK dua puluh", AlarmSpeechText.route("JAK.20"))
+        assertEquals("JAK delapan puluh", AlarmSpeechText.route("JAK.80"))
+        // Selain belasan/puluhan dibaca satuan
+        assertEquals("JAK tujuh enam", AlarmSpeechText.route("JAK.76"))
+        assertEquals("JAK delapan delapan", AlarmSpeechText.route("JAK.88"))
+        assertEquals("JAK dua satu", AlarmSpeechText.route("JAK.21"))
+        assertEquals("JAK nol satu", AlarmSpeechText.route("JAK.01"))
+        // Selain 2 digit tetap dibaca sesuai
+        assertEquals("JAK 115", AlarmSpeechText.route("JAK.115"))
+        assertEquals("JAK 5", AlarmSpeechText.route("JAK.5"))
+        assertEquals("JAK 10A", AlarmSpeechText.route("JAK.10A"))
+    }
     @Test fun exactApprovedWordingAndRemainingTimeAtSpeechStart() {
         assertEquals("Segera berangkat, Rute JAK 115, unit delapan belas enam lima, berangkat dalam 7 detik.",
             AlarmSpeechText.message(event("prep"), 3001))
         assertEquals("Rute JAK 115, unit delapan belas enam lima, saatnya berangkat.", AlarmSpeechText.message(event(), 10000))
+        val eventJak76 = event().copy(routeName = "JAK.76")
+        assertEquals("Rute JAK tujuh enam, unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventJak76, 10000))
+        val eventJak15 = event().copy(routeName = "JAK.15")
+        assertEquals("Rute JAK lima belas, unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventJak15, 10000))
+        val eventJak90 = event().copy(routeName = "JAK.90")
+        assertEquals("Rute JAK sembilan puluh, unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventJak90, 10000))
     }
     @Test fun latePreparationIsNotSpokenAsDepartureOrZeroSeconds() {
         assertNull(AlarmSpeechText.message(event("prep"), 10000))

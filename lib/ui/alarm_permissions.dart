@@ -37,7 +37,33 @@ class AlarmPermissionPanel extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Volume Alarm Android: ${d.alarmVolume}/${d.alarmVolumeMax}. HEDGE mengikuti volume ini.',
+                    'Volume Audio Android: ${d.alarmVolume}/${d.alarmVolumeMax}. HEDGE mengikuti volume Media/Speaker ini.',
+                  ),
+                ),
+              if (d.alarmVolume == 0 && d.alarmVolumeMax > 0)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: context.hedge.warningSurface,
+                    borderRadius: BorderRadius.circular(HedgeTokens.radius),
+                    border: Border.all(color: context.hedge.amberInk),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.volume_off, color: context.hedge.amberInk, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Volume Alarm Android sedang 0 (Hening). Besarkan volume audio perangkat lewat tombol samping HP atau Pengaturan volume Android.',
+                          style: TextStyle(
+                            color: context.hedge.amberInk,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               if (d.audioIssue.isNotEmpty)

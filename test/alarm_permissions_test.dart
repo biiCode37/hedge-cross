@@ -94,4 +94,51 @@ void main() {
       },
     );
   }
+
+  testWidgets('Displays warning when alarm volume is 0', (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(NotificationService.channel, (call) async {
+          if (call.method == 'status') {
+            return {
+              'notifications': true,
+              'exact': true,
+              'fullScreen': true,
+              'overlay': true,
+              'speechStatus': 'Suara offline siap',
+              'alarmVolume': 0,
+              'alarmVolumeMax': 7,
+              'audioIssue': '',
+              'voice': 'id-ID-offline',
+              'pending': 5,
+            };
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding
+          .instance
+          .defaultBinaryMessenger
+          .setMockMethodCallHandler(NotificationService.channel, null),
+    );
+    final service = NotificationService(android: true)..ready = true;
+    await service.refreshStatus();
+    expect(service.device.value.alarmVolume, 0);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: hedgeTheme(Brightness.dark),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: AlarmPermissionPanel(
+              service: service,
+              workspace: () => workspace,
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.textContaining('Volume Alarm Android sedang 0 (Hening)'),
+      findsOneWidget,
+    );
+  });
 }

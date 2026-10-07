@@ -24,8 +24,23 @@ object AlarmSpeechText {
             words.joinToString(" ")
         }
     }.replace(Regex("[._/-]+"), " ").replace(Regex("\\s+"), " ").trim()
+    fun route(value: String): String {
+        val pattern = Regex("""(?i)\bJAK[.\s](\d{2})(?!\w)""")
+        val replaced = pattern.replace(value) { match ->
+            val numStr = match.groupValues[1]
+            val num = numStr.toInt()
+            val spoken = when {
+                num == 10 -> "sepuluh"
+                num in 11..19 -> teen(num)
+                num in 20..90 && num % 10 == 0 -> "${digits[num / 10]} puluh"
+                else -> "${digits[numStr[0] - '0']} ${digits[numStr[1] - '0']}"
+            }
+            "JAK $spoken"
+        }
+        return replaced.replace('.', ' ').replace(Regex("\\s+"), " ").trim()
+    }
     fun message(event: AlarmSpec, now: Long): String? {
-        val route = event.routeName.replace('.', ' ')
+        val route = route(event.routeName)
         val number = unit(event.unitNumber)
         if (event.stage == "prep") {
             if (now >= event.departureAt) return null
