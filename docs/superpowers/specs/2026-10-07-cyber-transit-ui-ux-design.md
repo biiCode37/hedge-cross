@@ -106,8 +106,55 @@ Menghindari "god file" dengan memecah antarmuka menjadi komponen terisolasi:
 
 ---
 
-## 5. Agenda Bagian Berikutnya
+---
+
+## 5. Bagian 4: Papan TV / Board Monitor Modern (Airport/FIDS Style) (DIKUNCI)
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ [LOGO] HEDGE — Headway Generator By Mikrotrans Utara      15:10:45 WIB  [Semua Rute ▾] │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ ┌─── HERO DEPARTURE (VISIBILITAS JARAK 5 METER) ─────────────────────────────────────┐ │
+│ │  JAK.115       UNIT 1865         00:15           [ WAKTU BERANGKAT (AMBER PULSE) ] │ │
+│ └────────────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                        │
+│ ┌─── FIDS MATRIX BOARD (FLIGHT INFORMATION STYLE) ───────────────────────────────────┐ │
+│ │  WAKTU    RUTE      UNIT       RITASE     HEADWAY    STATUS                        │ │
+│ │ ────────────────────────────────────────────────────────────────────────────────── │ │
+│ │  07:05    JAK.115   1860       Rit 3      3m         [ SUDAH BERANGKAT ] (Muted)   │ │
+│ │  07:15    JAK.115   1865       Rit 3      3m         [ BOARDING / DUE  ] (Amber)   │ │
+│ │  07:18    JAK.115   1870       Rit 3      3m         [ BERSIAP         ] (Cyan)    │ │
+│ │  07:21    JAK.115   1875       Rit 3      3m         [ STANDBY         ] (Silver)  │ │
+│ │  07:24    JAK.115   1880       Rit 3      3m         [ STANDBY         ] (Silver)  │ │
+│ └────────────────────────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.1 Tata Letak Layar Lebar (16:9 Landscape Kiosk)
+1. **Header Papan TV**:
+   * Menampilkan identitas visual HEDGE Mikrotrans Utara, jam digital WIB berformat detik besar (*flight-clock style*), dan selektor rute (*Semua Rute / Rute Tertentu*).
+2. **Hero Departure Banner (Visibilitas Tinggi Jarak Jauh)**:
+   * Banner kartu hero horizontal memuat kode rute, nomor unit raksasa, hitung mundur waktu, dan badge status berdenyut halus (*Amber Pulse*) yang dirancang khusus agar terbaca jelas dari jarak 3–5 meter oleh pengemudi dan staf posko terminal.
+
+### 5.2 FIDS Departure Matrix Table
+1. **Format Matriks Terstruktur**:
+   * Kolom berjejer teratur dengan tipografi *tabular figures*: `WAKTU` | `RUTE` | `UNIT` | `RITASE` | `HEADWAY` | `STATUS`.
+2. **Status Badges Dinamis**:
+   * **`BOARDING / DUE`**: Aksen Amber Glow `#FF9800` berdenyut lembut.
+   * **`BERSIAP`**: Aksen Neon Electric Cyan `#00E5FF`.
+   * **`STANDBY`**: Aksen Crisp Silver `#F8FAFC`.
+   * **`SUDAH BERANGKAT`**: Aksen Muted Slate dengan tanda centang.
+
+### 5.3 Ketahanan Kiosk 24/7 & Zero Memory Leak
+1. **Always-On Display**: Menggunakan `WakelockPlus` agar layar monitor TV posko tidak pernah redup (*dim/sleep*).
+2. **Efisiensi CPU < 2%**: Isolasi ticker jam dan animasi ke `RepaintBoundary` untuk memastikan stabilitas 24/7 tanpa panas berlebih atau memory leak di Android TV Box posko terminal.
+
+---
+
+## 6. Ringkasan Kesepakatan & Status Desain
 - [x] **Bagian 1: Arsitektur Komponen & Visual Design System** *(Disepakati & Dikunci)*
 - [x] **Bagian 2: Logika Interaksi Live Capsule Hero & Transisi Satu Jempol** *(Disepakati & Dikunci)*
 - [x] **Bagian 3: Telemetry Bar & Cyber Timeline Schedule View** *(Disepakati & Dikunci)*
-- [ ] **Bagian 4: Papan TV / Board Monitor Modern (Airport/FIDS Style)**
+- [x] **Bagian 4: Papan TV / Board Monitor Modern (Airport/FIDS Style)** *(Disepakati & Dikunci)*
+
+*Seluruh spesifikasi desain UI/UX Cyber-Transit HUD telah rampung dan disepakati secara penuh. Langkah berikutnya adalah penyusunan rencana implementasi teknis (implementation plan).*
