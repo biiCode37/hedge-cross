@@ -94,7 +94,7 @@ class _BoardState extends ConsumerState<BoardScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Consumer(
                   builder: (context, clockRef, _) {
                     final instant =
@@ -102,29 +102,89 @@ class _BoardState extends ConsumerState<BoardScreen> {
                     final jakarta = instant.toUtc().add(
                       const Duration(hours: 7),
                     );
-                    return Row(
-                      children: [
-                        Icon(Icons.schedule, size: 16, color: p.muted),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${serviceDate(instant)} · ${formatMinute(jakarta.hour * 60 + jakarta.minute)} WIB',
-                            style: TextStyle(fontSize: 12, color: p.muted),
+                    final secStr = jakarta.second.toString().padLeft(2, '0');
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.raised,
+                        borderRadius: BorderRadius.circular(HedgeTokens.radius),
+                        border: Border.all(color: p.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.schedule, size: 16, color: p.cyanInk),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${serviceDate(instant)} · ${formatMinute(jakarta.hour * 60 + jakarta.minute)}:$secStr WIB',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: p.text,
+                                fontFeatures: HedgeTokens.numberFeatures,
+                              ),
+                            ),
                           ),
-                        ),
-                        Icon(
-                          Icons.visibility_outlined,
-                          size: 16,
-                          color: p.cyanInk,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Layar aktif',
-                          style: TextStyle(fontSize: 12, color: p.muted),
-                        ),
-                      ],
+                          Icon(Icons.tv_rounded, size: 16, color: p.cyanInk),
+                          const SizedBox(width: 6),
+                          Text(
+                            'FIDS KIOSK',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: .8,
+                              color: p.cyanInk,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 72,
+                      child: Text(
+                        'WAKTU',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                          color: p.muted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'ARMADA',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                          color: p.muted,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'STATUS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
+                        color: p.muted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -134,41 +194,101 @@ class _BoardState extends ConsumerState<BoardScreen> {
                 itemCount: rows.length > 30 ? 30 : rows.length,
                 itemBuilder: (_, i) {
                   final item = rows[i];
+                  final isFocused = item.row.id == focus?.departure.id;
                   return RepaintBoundary(
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: p.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        color: isFocused ? p.focusSurface : p.surface,
+                        borderRadius: BorderRadius.circular(HedgeTokens.radius),
                         border: Border.all(
-                          color: item.row.id == focus?.departure.id
-                              ? p.cyanInk
+                          color: isFocused
+                              ? p.cyanInk.withValues(alpha: .6)
                               : p.border,
+                          width: isFocused ? 1.5 : 1.0,
                         ),
+                        boxShadow: isFocused
+                            ? [
+                                BoxShadow(
+                                  color: p.cyanInk.withValues(alpha: .12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Row(
                         children: [
-                          Expanded(
+                          SizedBox(
+                            width: 72,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  item.row.unitNumber,
+                                  formatMinute(item.row.minute),
                                   style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
                                     color: p.text,
                                     fontFeatures: HedgeTokens.numberFeatures,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
                                 Text(
-                                  '${item.route.name} · ${formatMinute(item.row.minute)} · R${item.row.round}',
+                                  item.route.name,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
                                     color: p.muted,
                                   ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.row.unitNumber,
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.1,
+                                    color: p.text,
+                                    letterSpacing: -.3,
+                                    fontFeatures: HedgeTokens.numberFeatures,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Ritase ${item.row.round}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: p.muted,
+                                      ),
+                                    ),
+                                    if (item.row.peak) ...[
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'PEAK',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: p.cyanInk,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                             ),
@@ -178,16 +298,40 @@ class _BoardState extends ConsumerState<BoardScreen> {
                               final instant =
                                   clockRef.watch(clockProvider).value ??
                                   DateTime.now();
-                              return Text(
-                                formatCountdown(
-                                  item.at.difference(instant.toUtc()),
-                                ),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: p.cyanInk,
-                                  fontFeatures: HedgeTokens.numberFeatures,
-                                ),
+                              final remaining =
+                                  item.at.difference(instant.toUtc());
+                              final due = remaining <= Duration.zero;
+                              final imminent =
+                                  remaining <= const Duration(seconds: 60);
+                              final color = due
+                                  ? p.amberInk
+                                  : (imminent ? p.cyanInk : p.text);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    due
+                                        ? 'BOARDING'
+                                        : (imminent ? 'BERSIAP' : 'STANDBY'),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: .8,
+                                      color: color,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    formatCountdown(remaining),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: color,
+                                      fontFeatures: HedgeTokens.numberFeatures,
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                           ),
