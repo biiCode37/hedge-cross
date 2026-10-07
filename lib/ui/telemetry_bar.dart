@@ -23,7 +23,7 @@ class FleetTelemetryPillBar extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -73,7 +73,7 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.hedge;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(HedgeTokens.radius),
@@ -82,12 +82,12 @@ class _Pill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: accent),
+          Icon(icon, size: 14, color: accent),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: .3,
               color: p.text,

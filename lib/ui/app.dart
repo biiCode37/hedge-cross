@@ -15,6 +15,7 @@ import '../domain/models.dart';
 import 'configuration.dart';
 import 'design_system.dart';
 import 'dispatch_components.dart';
+import 'telemetry_bar.dart';
 import 'alarm_overlay.dart';
 import 'alarm_permissions.dart';
 import '../domain/alarm_plan.dart';
@@ -451,9 +452,27 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     return CustomScrollView(
       key: PageStorageKey('schedule:${route.id}'),
       slivers: [
+        if (revision != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
+              child: FleetTelemetryPillBar(
+                activeUnits: route.activeUnits.length,
+                currentRound: focus?.departure.round ??
+                    (revision.departures.isNotEmpty
+                        ? revision.departures.first.round
+                        : 1),
+                totalRounds: route.config.rounds,
+                headwayMinutes: focus?.departure.nextGap ??
+                    (revision.departures.isNotEmpty
+                        ? (revision.departures.first.nextGap ?? 3)
+                        : 3),
+              ),
+            ),
+          ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
             child: focus != null
                 ? DepartureFocusPanel(focus: focus)
                 : Container(
@@ -523,7 +542,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
           ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -582,7 +601,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         else ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
               child: Row(
                 children: [
                   Expanded(
@@ -632,6 +651,8 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   done: workspace.hasDeparted(d.id),
                   focused: d.id == focus?.departure.id,
                   frozen: d.ordinal <= revision.frozenCount,
+                  isFirst: i == 0,
+                  isLast: i == rows.length - 1,
                   onRecord: () async {
                     if (await confirm(
                       'Unit ${d.unitNumber} sudah berangkat?',
