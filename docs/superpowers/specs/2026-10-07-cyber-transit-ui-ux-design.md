@@ -75,8 +75,39 @@ Menghindari "god file" dengan memecah antarmuka menjadi komponen terisolasi:
 
 ---
 
-## 4. Agenda Bagian Berikutnya
+---
+
+## 4. Bagian 3: Telemetry Bar & Cyber Timeline Schedule View (DIKUNCI)
+
+![Telemetry Bar and Cyber Timeline](file:///D:/MINE/HEDGE-FLUTTER/docs/superpowers/specs/assets/cyber-transit-timeline-telemetry.jpg)
+
+*Gambar 3: Tampilan Telemetry Bar di bagian atas dan Cyber Transit Timeline dengan rel transit vertikal menyambungkan status armada.*
+
+### 4.1 Fleet Telemetry Pill Bar
+1. **Tata Letak & Metrik**:
+   * Diletakkan di bawah App Bar dan di atas Live Capsule Hero.
+   * Terdiri dari 3 kapsul telemetri:
+     * **Kapsul 1 (Armada)**: Ikon armada bus + `39 Unit Aktif` (Aksen Neon Cyan).
+     * **Kapsul 2 (Ritase)**: Ikon ritase + `Ritase 3/8` (Aksen Perak / Muted).
+     * **Kapsul 3 (Headway)**: Ikon headway + `Headway 3m` (Aksen Amber Glow).
+   * **Responsivitas Layar Sempit**:
+     * Pada layar sempit (lebar 320–360px), kapsul otomatis memanfaatkan horizontal scrolling halus atau auto-scaling tanpa pembungkusan (*no awkward wrapping*).
+
+### 4.2 Linimasa Rel Transit (Cyber Transit Timeline)
+1. **Transit Rail Track Vertikal**:
+   * Menggantikan tabel datar konvensional dengan visual rel transit bercahaya:
+     * **Selesai Berangkat (`Departed`)**: Rel warna solid, node lingkaran centang emas/amber, teks unit sedikit redup menandakan ritase telah selesai dan mencantumkan waktu aktual keberangkatan.
+     * **Aktif / Waktu Berangkat (`Live/Due`)**: Node lingkaran berdenyut (*pulsing aura node*), kartu unit terangkat (*elevated HUD card*) berbingkai neon tipis dengan badge status `WAKTU BERANGKAT`.
+     * **Mendatang (`Upcoming`)**: Rel putus-putus (*dashed line*) dengan node lingkaran berongga, teks unit perak kontras tinggi, dan jam rencana keberangkatan (misal: `07:18`, `07:25`).
+2. **Filter Ritase Fleksibel**:
+   * Dilengkapi bilah chip filter horizontal di atas linimasa untuk melihat ritase tertentu secara cepat (Semua, Ritase 1, Ritase 2, dst.).
+3. **Optimasi Performa 120 FPS**:
+   * Menggunakan virtualisasi `ListView.builder` dengan ukuran baris item terukur (*fixed item extent*) sehingga scrolling 300+ baris jadwal terasa seringan kertas tanpa jank di GPU ponsel.
+
+---
+
+## 5. Agenda Bagian Berikutnya
 - [x] **Bagian 1: Arsitektur Komponen & Visual Design System** *(Disepakati & Dikunci)*
 - [x] **Bagian 2: Logika Interaksi Live Capsule Hero & Transisi Satu Jempol** *(Disepakati & Dikunci)*
-- [ ] **Bagian 3: Telemetry Bar & Cyber Timeline Schedule View**
-- [ ] **Bagian 4: Papan TV / Board Monitor Modern**
+- [x] **Bagian 3: Telemetry Bar & Cyber Timeline Schedule View** *(Disepakati & Dikunci)*
+- [ ] **Bagian 4: Papan TV / Board Monitor Modern (Airport/FIDS Style)**
