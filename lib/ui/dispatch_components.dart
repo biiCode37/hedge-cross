@@ -38,8 +38,9 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    final isTest =
-        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       _pulseController.repeat(reverse: true);
     } else {
@@ -124,10 +125,16 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF060B12) : (widget.focus.due ? p.warningSurface : p.focusSurface),
+                      color: isDark
+                          ? const Color(0xFF060B12)
+                          : (widget.focus.due
+                                ? p.warningSurface
+                                : p.focusSurface),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: accent.withValues(alpha: isDark ? (0.6 + 0.4 * pulse) : 0.6),
+                        color: accent.withValues(
+                          alpha: isDark ? (0.6 + 0.4 * pulse) : 0.6,
+                        ),
                         width: 1.2,
                       ),
                       boxShadow: isDark
@@ -150,7 +157,9 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: accent.withValues(alpha: 0.7 + 0.3 * pulse),
+                                color: accent.withValues(
+                                  alpha: 0.7 + 0.3 * pulse,
+                                ),
                                 blurRadius: 6 * pulse,
                                 spreadRadius: 1,
                               ),
@@ -258,11 +267,16 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
                       ),
                       if (widget.focus.departure.peak)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1.5,
+                          ),
                           decoration: BoxDecoration(
                             color: p.cyanInk.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: p.cyanInk.withValues(alpha: 0.4)),
+                            border: Border.all(
+                              color: p.cyanInk.withValues(alpha: 0.4),
+                            ),
                           ),
                           child: Text(
                             'PEAK',
@@ -387,7 +401,8 @@ class SlideAwayDispatchAction extends StatefulWidget {
   final double pulse;
 
   @override
-  State<SlideAwayDispatchAction> createState() => _SlideAwayDispatchActionState();
+  State<SlideAwayDispatchAction> createState() =>
+      _SlideAwayDispatchActionState();
 }
 
 class _SlideAwayDispatchActionState extends State<SlideAwayDispatchAction> {
@@ -478,7 +493,7 @@ class CountdownIndicator extends ConsumerWidget {
     final p = context.hedge;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = imminent ? p.amberInk : p.cyanInk;
-    final label = due ? 'Waktu berangkat' : 'Menuju berangkat';
+    final label = due ? 'Waktu berangkat' : 'Berangkat Dalam';
     // Countdown sisa waktu: penuh (1.0) saat waktu tersisa >= 300s,
     // menyusut mengikis ke 0.0 saat waktu mendekati dan mencapai 00:00 (due).
     final progress = due
@@ -510,48 +525,54 @@ class CountdownIndicator extends ConsumerWidget {
                   isDue: due,
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      key: const ValueKey('countdown-label'),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.6,
-                        color: p.muted,
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: large ? 20 : 16,
+                  vertical: large ? 12 : 8,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        key: const ValueKey('countdown-label'),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8,
+                          color: p.muted,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      formatCountdown(remaining),
-                      key: const ValueKey('focus-countdown'),
-                      style: TextStyle(
-                        fontFamily: HedgeTokens.cyberFont,
-                        fontSize: large ? 40 : 28,
-                        fontWeight: FontWeight.w800,
-                        height: 1.05,
-                        color: color,
-                        fontFeatures: HedgeTokens.numberFeatures,
-                        shadows: isDark
-                            ? [
-                                Shadow(
-                                  color: color.withValues(alpha: 0.5 * pulse),
-                                  blurRadius: 10 * pulse,
-                                ),
-                              ]
-                            : null,
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        formatCountdown(remaining),
+                        key: const ValueKey('focus-countdown'),
+                        style: TextStyle(
+                          fontFamily: HedgeTokens.cyberFont,
+                          fontSize: large ? 40 : 28,
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
+                          color: color,
+                          fontFeatures: HedgeTokens.numberFeatures,
+                          shadows: isDark
+                              ? [
+                                  Shadow(
+                                    color: color.withValues(alpha: 0.5 * pulse),
+                                    blurRadius: 10 * pulse,
+                                  ),
+                                ]
+                              : null,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -585,7 +606,7 @@ class CyberCircularGaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = size.width * 0.085;
+    final strokeWidth = size.width * 0.07;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
@@ -623,7 +644,11 @@ class CyberCircularGaugePainter extends CustomPainter {
     final anchorPaint = Paint()
       ..color = (isDue ? HedgeTokens.amber : activeColor).withValues(alpha: 0.6)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(center.dx, center.dy - radius), strokeWidth * 0.28, anchorPaint);
+    canvas.drawCircle(
+      Offset(center.dx, center.dy - radius),
+      strokeWidth * 0.28,
+      anchorPaint,
+    );
 
     // Busur Sisa Waktu (Depleting Clockwise menuju jam 12)
     final elapsed = 1.0 - progress;
@@ -650,8 +675,9 @@ class CyberCircularGaugePainter extends CustomPainter {
 
         // Counter-accent dual glow jika sisa waktu masih > 30%
         if (progress > 0.3) {
-          final dualAccentColor =
-              isImminent ? HedgeTokens.electricCyan : HedgeTokens.amber;
+          final dualAccentColor = isImminent
+              ? HedgeTokens.electricCyan
+              : HedgeTokens.amber;
           final dualArcPaint = Paint()
             ..color = dualAccentColor.withValues(alpha: 0.35 + 0.25 * pulse)
             ..strokeWidth = strokeWidth * 0.9
@@ -698,7 +724,11 @@ class CyberCircularGaugePainter extends CustomPainter {
             ..color = activeColor.withValues(alpha: 0.8)
             ..style = PaintingStyle.fill
             ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * pulse);
-          canvas.drawCircle(Offset(headX, headY), strokeWidth * 0.6, headGlowPaint);
+          canvas.drawCircle(
+            Offset(headX, headY),
+            strokeWidth * 0.6,
+            headGlowPaint,
+          );
         }
       }
     }
