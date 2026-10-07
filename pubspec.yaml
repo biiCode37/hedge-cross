@@ -1,7 +1,7 @@
 name: hedge_flutter
 description: HEDGE — Headway Generator By Mikrotrans Utara.
 publish_to: none
-version: 2.0.3+6
+version: 2.0.4+7
 environment:
   sdk: '>=3.10.4 <4.0.0'
 dependencies:
