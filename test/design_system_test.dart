@@ -59,6 +59,27 @@ void main() {
     );
   }
   test(
+    'Cyber-Transit HUD tokens provide high-contrast glowing accents and tabular telemetry styles',
+    () {
+      expect(HedgeTokens.amber, const Color(0xffff9800));
+      expect(HedgeTokens.cyan, const Color(0xff38bdf8));
+      expect(HedgeTokens.electricCyan, const Color(0xff00e5ff));
+      expect(HedgeTokens.obsidian, const Color(0xff070b12));
+      expect(HedgeTokens.obsidianSurface, const Color(0xff0c1017));
+      expect(HedgeTokens.obsidianRaised, const Color(0xff141a24));
+      expect(HedgeTokens.primaryButtonHeight, 54.0);
+      expect(HedgeTokens.hudRadius, 16.0);
+      expect(
+        HedgeTokens.numberFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
+      final darkPalette = HedgePalette.dark;
+      expect(darkPalette.background, const Color(0xff070b12));
+      final lightPalette = HedgePalette.light;
+      expect(lightPalette.background, const Color(0xfff8fafc));
+    },
+  );
+  test(
     'Focus remains stable across ticks and uses due hold without implying actual',
     () {
       final workspace = sampleWorkspace(DateTime.utc(2026, 10, 5));

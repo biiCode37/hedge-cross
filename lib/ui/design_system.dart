@@ -3,13 +3,19 @@ import 'package:flutter/material.dart';
 abstract final class HedgeTokens {
   static const amber = Color(0xffff9800);
   static const cyan = Color(0xff38bdf8);
+  static const electricCyan = Color(0xff00e5ff);
   static const obsidian = Color(0xff070b12);
+  static const obsidianSurface = Color(0xff0c1017);
+  static const obsidianRaised = Color(0xff141a24);
   static const silver = Color(0xfff8fafc);
   static const touchTarget = 48.0;
+  static const primaryButtonHeight = 54.0;
   static const radius = 12.0;
   static const panelRadius = 20.0;
+  static const hudRadius = 16.0;
   static const space = 8.0;
   static const motion = Duration(milliseconds: 180);
+  static const slideMotion = Duration(milliseconds: 200);
   static const numberFeatures = [FontFeature.tabularFigures()];
 }
 
