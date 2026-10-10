@@ -12,6 +12,7 @@ class CockpitFramePainter extends CustomPainter {
   final Color surfaceColor;
   final bool isDark;
   final double chamfer;
+  final bool isAmber;
 
   CockpitFramePainter({
     required this.cyanColor,
@@ -19,6 +20,7 @@ class CockpitFramePainter extends CustomPainter {
     required this.surfaceColor,
     required this.isDark,
     this.chamfer = 12.0,
+    this.isAmber = false,
   });
 
   @override
@@ -48,7 +50,7 @@ class CockpitFramePainter extends CustomPainter {
     final rect = Rect.fromLTWH(0, 0, w, h);
     final borderPaint = Paint()
       ..shader = LinearGradient(
-        colors: [cyanColor, amberColor],
+        colors: isAmber ? [amberColor, cyanColor] : [cyanColor, amberColor],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(rect)
@@ -83,7 +85,8 @@ class CockpitFramePainter extends CustomPainter {
       oldDelegate.amberColor != amberColor ||
       oldDelegate.surfaceColor != surfaceColor ||
       oldDelegate.isDark != isDark ||
-      oldDelegate.chamfer != chamfer;
+      oldDelegate.chamfer != chamfer ||
+      oldDelegate.isAmber != isAmber;
 }
 
 /// Tactical F-35 Glass Cockpit Container Panel with chamfered geometry
@@ -93,6 +96,7 @@ class CockpitFrame extends StatelessWidget {
   final String? title;
   final EdgeInsetsGeometry padding;
   final double chamfer;
+  final bool isAmber;
 
   const CockpitFrame({
     super.key,
@@ -100,6 +104,7 @@ class CockpitFrame extends StatelessWidget {
     this.title,
     this.padding = const EdgeInsets.all(14),
     this.chamfer = 12.0,
+    this.isAmber = false,
   });
 
   @override
@@ -117,6 +122,7 @@ class CockpitFrame extends StatelessWidget {
         surfaceColor: surface,
         isDark: isDark,
         chamfer: chamfer,
+        isAmber: isAmber,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -124,25 +130,52 @@ class CockpitFrame extends StatelessWidget {
         children: [
           if (title != null) ...[
             Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF060B12) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: cyan.withValues(alpha: isDark ? 0.6 : 0.5),
-                    width: 1.0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF060B12) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: (isAmber ? amber : cyan).withValues(alpha: isDark ? 0.7 : 0.6),
+                      width: 1.0,
+                    ),
                   ),
-                ),
-                child: Text(
-                  title!,
-                  style: TextStyle(
-                    fontFamily: HedgeTokens.cyberFont,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.1,
-                    color: cyan,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: isAmber ? amber : cyan,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isAmber ? amber : cyan,
+                                blurRadius: 4,
+                                spreadRadius: 0.5,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          title!,
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                            color: isAmber ? amber : cyan,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

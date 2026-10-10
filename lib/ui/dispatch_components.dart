@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/dispatch_focus.dart';
 import '../application/workspace_controller.dart';
 import '../domain/models.dart';
+import 'cockpit_components.dart';
 import 'design_system.dart';
 import 'schedule_timeline.dart';
 
@@ -69,237 +70,134 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
         animation: _pulseAnimation,
         builder: (context, _) {
           final pulse = _pulseAnimation.value;
-          final glowOpacity = (0.35 + 0.35 * pulse).clamp(0.0, 1.0);
-          final cardBg = isDark ? const Color(0xFF0A0F18) : p.surface;
 
-          return CustomPaint(
-            painter: CyberHudFramePainter(
-              color: accent,
-              pulse: pulse,
-              isDark: isDark,
-              isDue: widget.focus.due,
+          return CockpitFrame(
+            title: widget.focus.due
+                ? 'WAKTU BERANGKAT'
+                : 'KEBERANGKATAN BERIKUTNYA',
+            isAmber: widget.focus.due,
+            chamfer: widget.large ? 16 : 14,
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.large ? 24 : 14,
+              vertical: widget.large ? 16 : 12,
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(HedgeTokens.panelRadius),
-                border: Border.all(
-                  color: accent.withValues(
-                    alpha: isDark ? (0.5 + 0.45 * pulse) : 0.8,
-                  ),
-                  width: widget.focus.due ? 2.0 : 1.5,
-                ),
-                boxShadow: isDark
-                    ? [
-                        BoxShadow(
-                          color: accent.withValues(alpha: glowOpacity * 0.45),
-                          blurRadius: 18 + 8 * pulse,
-                          spreadRadius: 1 + 1.5 * pulse,
-                        ),
-                        BoxShadow(
-                          color: accent.withValues(alpha: glowOpacity * 0.2),
-                          blurRadius: 36 + 10 * pulse,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: accent.withValues(alpha: 0.12),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.large ? 24 : 14,
-                vertical: widget.large ? 18 : 12,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Badge Kapsul Status di Atas
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF060B12)
-                          : (widget.focus.due
-                                ? p.warningSurface
-                                : p.focusSurface),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: accent.withValues(
-                          alpha: isDark ? (0.6 + 0.4 * pulse) : 0.6,
-                        ),
-                        width: 1.2,
-                      ),
-                      boxShadow: isDark
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 4),
+
+                // Nomor Unit Raksasa Terpusat
+                Semantics(
+                  sortKey: const OrdinalSortKey(1),
+                  label: 'Nomor unit ${widget.focus.departure.unitNumber}',
+                  excludeSemantics: true,
+                  child: Text(
+                    widget.focus.departure.unitNumber,
+                    key: const ValueKey('focus-unit'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontSize: widget.large ? 64 : 44,
+                      height: 1.05,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      color: p.text,
+                      fontFeatures: HedgeTokens.numberFeatures,
+                      shadows: isDark
                           ? [
-                              BoxShadow(
-                                color: accent.withValues(alpha: 0.35 * pulse),
-                                blurRadius: 8 * pulse,
+                              Shadow(
+                                color: accent.withValues(alpha: 0.45 * pulse),
+                                blurRadius: 14,
                               ),
                             ]
                           : null,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent.withValues(
-                                  alpha: 0.7 + 0.3 * pulse,
-                                ),
-                                blurRadius: 6 * pulse,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              widget.focus.due
-                                  ? 'WAKTU BERANGKAT'
-                                  : 'KEBERANGKATAN BERIKUTNYA',
-                              style: TextStyle(
-                                fontFamily: HedgeTokens.cyberFont,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.1,
-                                color: accent,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                  const SizedBox(height: 8),
+                ),
+                const SizedBox(height: 8),
 
-                  // Nomor Unit Raksasa Terpusat
-                  Semantics(
-                    sortKey: const OrdinalSortKey(1),
-                    label: 'Nomor unit ${widget.focus.departure.unitNumber}',
-                    excludeSemantics: true,
-                    child: Text(
-                      widget.focus.departure.unitNumber,
-                      key: const ValueKey('focus-unit'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: HedgeTokens.cyberFont,
-                        fontSize: widget.large ? 64 : 44,
-                        height: 1.05,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                        color: p.text,
-                        fontFeatures: HedgeTokens.numberFeatures,
-                        shadows: isDark
-                            ? [
-                                Shadow(
-                                  color: accent.withValues(alpha: 0.45 * pulse),
-                                  blurRadius: 14,
-                                ),
-                              ]
-                            : null,
-                      ),
-                    ),
+                // Centerpiece Circular Countdown HUD Gauge
+                CountdownIndicator(
+                  at: plannedInstant(
+                    widget.focus.revision.date,
+                    widget.focus.departure.minute,
                   ),
-                  const SizedBox(height: 8),
+                  large: widget.large,
+                  pulse: pulse,
+                ),
+                const SizedBox(height: 8),
 
-                  // Centerpiece Circular Countdown HUD Gauge
-                  CountdownIndicator(
-                    at: plannedInstant(
-                      widget.focus.revision.date,
-                      widget.focus.departure.minute,
-                    ),
-                    large: widget.large,
-                    pulse: pulse,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Metadata Jadwal & Rute
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Semantics(
-                        sortKey: const OrdinalSortKey(3),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.schedule, size: 15, color: p.muted),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${formatMinute(widget.focus.departure.minute)} WIB',
-                              style: TextStyle(
-                                fontFamily: HedgeTokens.cyberFont,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: p.text,
-                                fontFeatures: HedgeTokens.numberFeatures,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${widget.focus.route.name} · R${widget.focus.departure.round}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: p.muted,
-                        ),
-                      ),
-                      if (widget.focus.departure.peak)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: p.cyanInk.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: p.cyanInk.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Text(
-                            'PEAK',
+                // Metadata Jadwal & Rute
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Semantics(
+                      sortKey: const OrdinalSortKey(3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.schedule, size: 15, color: p.muted),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${formatMinute(widget.focus.departure.minute)} WIB',
                             style: TextStyle(
                               fontFamily: HedgeTokens.cyberFont,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                              color: p.cyanInk,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: p.text,
+                              fontFeatures: HedgeTokens.numberFeatures,
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-
-                  // Tombol Aksi Thumb-First Ergonomis
-                  if (widget.onDispatch != null)
-                    SlideAwayDispatchAction(
-                      onDispatch: widget.onDispatch!,
-                      pulse: pulse,
+                        ],
+                      ),
                     ),
-                ],
-              ),
+                    Text(
+                      '${widget.focus.route.name} · R${widget.focus.departure.round}',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: p.muted,
+                      ),
+                    ),
+                    if (widget.focus.departure.peak)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.cyanInk.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: p.cyanInk.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          'PEAK',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: p.cyanInk,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Tombol Aksi Thumb-First Ergonomis
+                if (widget.onDispatch != null)
+                  SlideAwayDispatchAction(
+                    onDispatch: widget.onDispatch!,
+                    pulse: pulse,
+                  ),
+              ],
             ),
           );
         },
@@ -518,7 +416,7 @@ class CountdownIndicator extends ConsumerWidget {
                 painter: CyberCircularGaugePainter(
                   progress: progress,
                   activeColor: color,
-                  trackColor: isDark ? const Color(0xFF070D16) : p.focusSurface,
+                  trackColor: isDark ? const Color(0xFF070D16) : const Color(0xFFCBD5E1),
                   pulse: pulse,
                   isDark: isDark,
                   isImminent: imminent,
@@ -772,4 +670,118 @@ class ScheduleDepartureTile extends StatelessWidget {
       onRecord: onRecord,
     );
   }
+}
+
+/// Themed floating SnackBar with Undo action and explicit Close (X) button.
+void showDepartureUndoSnackBar(
+  BuildContext context, {
+  required String unitNumber,
+  required VoidCallback onUndo,
+}) {
+  final messenger = ScaffoldMessenger.of(context);
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final p = context.hedge;
+
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: isDark ? const Color(0xFF0C1017) : Colors.white,
+      elevation: 6,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: isDark ? p.cyanInk.withValues(alpha: 0.4) : p.border,
+          width: 1.2,
+        ),
+      ),
+      duration: const Duration(seconds: 5),
+      content: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: p.cyanInk.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: p.cyanInk.withValues(alpha: 0.4)),
+            ),
+            child: Icon(Icons.check_rounded, color: p.cyanInk, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Keberangkatan Tercatat',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: p.cyanInk,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'Unit $unitNumber telah diberangkatkan',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: p.amberInk,
+              backgroundColor: p.amberInk.withValues(alpha: 0.12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: p.amberInk.withValues(alpha: 0.35)),
+              ),
+            ),
+            onPressed: () {
+              messenger.hideCurrentSnackBar();
+              onUndo();
+            },
+            child: const Text(
+              'BATALKAN',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(
+              Icons.close_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            tooltip: 'Tutup notifikasi',
+            onPressed: () {
+              messenger.hideCurrentSnackBar();
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }

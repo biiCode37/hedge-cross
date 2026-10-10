@@ -45,7 +45,9 @@ class FleetTelemetryPillBar extends StatelessWidget {
             const SizedBox(width: 8),
             _Pill(
               icon: Icons.timelapse_rounded,
-              label: 'Headway ${headwayMinutes}m',
+              label: headwayMinutes > 0
+                  ? 'Headway ${headwayMinutes}m'
+                  : 'Ritase Terakhir',
               accent: p.amberInk,
               background: p.warningSurface,
             ),
@@ -72,26 +74,56 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.hedge;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? const Color(0xFF090E17) : background;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(HedgeTokens.radius),
-        border: Border.all(color: accent.withValues(alpha: .35), width: 1),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: accent.withValues(alpha: isDark ? 0.6 : 0.7),
+          width: 1.1,
+        ),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: accent),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: accent,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: accent,
+                  blurRadius: 4,
+                  spreadRadius: 0.5,
+                ),
+              ],
+            ),
+          ),
           const SizedBox(width: 6),
+          Icon(icon, size: 14, color: accent),
+          const SizedBox(width: 5),
           Text(
             label,
             style: TextStyle(
               fontFamily: HedgeTokens.cyberFont,
               fontSize: 11,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               letterSpacing: .4,
-              color: p.text,
+              color: isDark ? Colors.white : p.text,
               fontFeatures: HedgeTokens.numberFeatures,
             ),
           ),

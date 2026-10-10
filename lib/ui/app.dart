@@ -226,6 +226,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
       }
     });
     final wide = MediaQuery.sizeOf(context).width >= 900;
+    final p = context.hedge;
     final content = route == null
         ? _empty(
             'Belum ada rute',
@@ -295,13 +296,52 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
                     final r = workspace.routes[i];
+                    final isSelected = route?.id == r.id;
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final activeCyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
                     return ChoiceChip(
-                      selected: route?.id == r.id,
-                      avatar: CircleAvatar(
-                        backgroundColor: Color(r.color),
-                        radius: 5,
+                      selected: isSelected,
+                      avatar: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Color(r.color),
+                          shape: BoxShape.circle,
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: Color(r.color),
+                                    blurRadius: 4,
+                                    spreadRadius: 0.5,
+                                  ),
+                                ]
+                              : null,
+                        ),
                       ),
                       label: Text('${r.name}${r.dirty ? ' •' : ''}'),
+                      labelStyle: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: isSelected
+                            ? (isDark ? Colors.white : activeCyan)
+                            : (isDark ? const Color(0xFF94A3B8) : p.muted),
+                      ),
+                      backgroundColor: isDark ? const Color(0xFF080C14) : p.surface,
+                      selectedColor: isDark
+                          ? activeCyan.withValues(alpha: 0.18)
+                          : p.focusSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        side: BorderSide(
+                          color: isSelected
+                              ? activeCyan.withValues(alpha: isDark ? 0.85 : 0.9)
+                              : (isDark ? const Color(0xFF1E293B) : p.border),
+                          width: isSelected ? 1.3 : 1.0,
+                        ),
+                      ),
+                      showCheckmark: false,
                       onSelected: state.saving
                           ? null
                           : (_) {
@@ -436,37 +476,36 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       }
                     },
                   )
-                : Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: p.surface,
-                      border: Border.all(color: p.border),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                : CockpitFrame(
+                    title: 'JADWAL TERSIMPAN',
+                    padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'JADWAL TERSIMPAN',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color: p.cyanInk,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 6),
                         Text(
                           revision == null
                               ? 'Siap menyusun'
                               : 'Layanan selesai',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : p.text,
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           '${route.activeUnits.length} unit · ${route.config.rounds} ritase',
-                          style: TextStyle(color: p.muted),
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: p.muted,
+                          ),
                         ),
                       ],
                     ),
