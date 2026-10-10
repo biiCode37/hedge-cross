@@ -19,6 +19,8 @@ import 'schedule_timeline.dart';
 import 'telemetry_bar.dart';
 import 'alarm_overlay.dart';
 import 'alarm_permissions.dart';
+import 'permission_gate.dart';
+import 'cockpit_components.dart';
 import '../domain/alarm_plan.dart';
 import '../application/dispatch_focus.dart';
 part 'data_actions.dart';
@@ -53,10 +55,13 @@ class HedgeApp extends ConsumerWidget {
       builder: (context, child) => Stack(
         children: [
           child!,
-          if (notifications?.isAndroid != true) const ForegroundAlarmOverlay(),
+          const ForegroundAlarmOverlay(),
         ],
       ),
-      home: HomeScreen(notifications: notifications),
+      home: PermissionGate(
+        notifications: notifications,
+        child: HomeScreen(notifications: notifications),
+      ),
     );
   }
 }
@@ -217,13 +222,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
       final instant = next.value;
       if (instant != null && instant.minute != lastMinute) {
         lastMinute = instant.minute;
-        if (widget.notifications != null) {
-          unawaited(
-            widget.notifications!.reconcile(
-              ref.read(workspaceProvider).workspace,
-            ),
-          );
-        }
+        unawaited(_syncNativeAlarms());
       }
     });
     final wide = MediaQuery.sizeOf(context).width >= 900;
@@ -243,101 +242,19 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             2 => _order(route),
             _ => _routes(workspace),
           };
-    final p = context.hedge;
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 74,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/hedge-logo.jpg',
-                  width: 38,
-                  height: 38,
-                  fit: BoxFit.cover,
+      appBar: AvionicsTopBar(
+        activeRouteName: route?.name ?? '',
+        onTvBoard: workspace.routes.any((r) => r.schedule != null)
+            ? () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const BoardScreen(),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'HEDGE',
-                    style: TextStyle(
-                      fontFamily: HedgeTokens.cyberFont,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                      fontSize: 17,
-                      color: p.text,
-                    ),
-                  ),
-                  Text(
-                    'Headway Generator',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'By Mikrotrans Utara',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: p.muted,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          Consumer(
-            builder: (context, ref, _) {
-              final now = ref.watch(clockProvider).value ?? DateTime.now();
-              final timeStr =
-                  '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: Text(
-                    timeStr,
-                    style: TextStyle(
-                      fontFamily: HedgeTokens.cyberFont,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: p.cyanInk,
-                      fontFeatures: HedgeTokens.numberFeatures,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Papan keberangkatan',
-            onPressed: workspace.routes.any((r) => r.schedule != null)
-                ? () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const BoardScreen(),
-                    ),
-                  )
-                : null,
-            icon: const Icon(Icons.tv, size: 20),
-          ),
-          IconButton(
-            tooltip: 'Pengaturan & backup',
-            onPressed: () => _settings(workspace),
-            icon: const Icon(Icons.tune, size: 20),
-          ),
-        ],
+              )
+            : null,
+        onSettings: () => _settings(workspace),
+        isSaving: state.saving,
       ),
       body: SafeArea(
         child: Column(
@@ -439,27 +356,9 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
       ),
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
+          : CockpitMfdNavBar(
               selectedIndex: destination,
               onDestinationSelected: (i) => setState(() => destination = i),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.schedule),
-                  label: 'Jadwal',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.directions_bus),
-                  label: 'Armada',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.reorder),
-                  label: 'Urutan',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.alt_route),
-                  label: 'Rute',
-                ),
-              ],
             ),
     );
   }
@@ -502,10 +401,11 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
               child: FleetTelemetryPillBar(
                 activeUnits: route.activeUnits.length,
-                currentRound: focus?.departure.round ??
-                    (revision.departures.isNotEmpty
-                        ? revision.departures.first.round
-                        : 1),
+                currentRound: roundFilter ??
+                    (focus?.departure.round ??
+                        (revision.departures.isNotEmpty
+                            ? revision.departures.first.round
+                            : 1)),
                 totalRounds: route.config.rounds,
                 headwayMinutes: focus?.departure.nextGap ??
                     (revision.departures.isNotEmpty
@@ -521,13 +421,17 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                 ? DepartureFocusPanel(
                     focus: focus,
                     onDispatch: () async {
+                      final d = focus.departure;
                       if (await controller.record(
                         focus.revision,
-                        focus.departure,
+                        d,
                         'departed',
                       )) {
-                        toast(
-                          'Keberangkatan unit ${focus.departure.unitNumber} tercatat.',
+                        if (!mounted) return;
+                        showDepartureUndoSnackBar(
+                          context,
+                          unitNumber: d.unitNumber,
+                          onUndo: () => controller.unrecord(d.id),
                         );
                       }
                     },
@@ -711,12 +615,26 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   isFirst: i == 0,
                   isLast: i == rows.length - 1,
                   onRecord: () async {
-                    if (await confirm(
+                    if (workspace.hasDeparted(d.id)) {
+                      if (await confirm(
+                        'Batalkan keberangkatan unit ${d.unitNumber}?',
+                        'Status keberangkatan aktual akan dihapus kembali.',
+                      )) {
+                        if (await controller.unrecord(d.id)) {
+                          toast('Status keberangkatan unit ${d.unitNumber} dibatalkan.');
+                        }
+                      }
+                    } else if (await confirm(
                       'Unit ${d.unitNumber} sudah berangkat?',
                       'Catat keberangkatan aktual sekarang untuk rencana ${formatMinute(d.minute)}.',
                     )) {
                       if (await controller.record(revision, d, 'departed')) {
-                        toast('Keberangkatan aktual tercatat.');
+                        if (!mounted) return;
+                        showDepartureUndoSnackBar(
+                          context,
+                          unitNumber: d.unitNumber,
+                          onUndo: () => controller.unrecord(d.id),
+                        );
                       }
                     }
                   },
@@ -1073,11 +991,18 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _config(HedgeRoute route) async {
+    await _syncNativeAlarms();
+    if (!mounted) return;
+    final currentRoute = ref
+        .read(workspaceProvider)
+        .workspace
+        .routes
+        .firstWhere((r) => r.id == route.id, orElse: () => route);
     final result = await showModalBottomSheet<HedgeRoute>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => ConfigurationSheet(route: route),
+      builder: (_) => ConfigurationSheet(route: currentRoute),
     );
     if (result != null) await controller.updateRoute(result);
   }

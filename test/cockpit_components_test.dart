@@ -56,12 +56,16 @@ void main() {
       ),
     );
 
-    expect(find.text('01 · JADWAL'), findsOneWidget);
-    expect(find.text('02 · ARMADA'), findsOneWidget);
-    expect(find.text('03 · URUTAN'), findsOneWidget);
-    expect(find.text('04 · RUTE'), findsOneWidget);
+    expect(find.text('01'), findsOneWidget);
+    expect(find.text('Jadwal'), findsOneWidget);
+    expect(find.text('02'), findsOneWidget);
+    expect(find.text('Armada'), findsOneWidget);
+    expect(find.text('03'), findsOneWidget);
+    expect(find.text('Urutan'), findsOneWidget);
+    expect(find.text('04'), findsOneWidget);
+    expect(find.text('Rute'), findsOneWidget);
 
-    await tester.tap(find.text('02 · ARMADA'));
+    await tester.tap(find.text('Armada'));
     await tester.pumpAndSettle();
     expect(selectedIndex, 1);
   });

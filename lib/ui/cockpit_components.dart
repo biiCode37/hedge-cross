@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../application/workspace_controller.dart';
 import 'design_system.dart';
 
 /// Painter that draws a military F-35 / sci-fi tactical cockpit frame
@@ -231,7 +233,7 @@ class CockpitStatusBadge extends StatelessWidget {
 /// Tactical Top Avionics Flight Header replacing default Material AppBar.
 class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String activeRouteName;
-  final String timeString;
+  final String? timeString;
   final VoidCallback? onTvBoard;
   final VoidCallback? onSettings;
   final VoidCallback? onDateSelect;
@@ -241,7 +243,7 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
   const AvionicsTopBar({
     super.key,
     required this.activeRouteName,
-    required this.timeString,
+    this.timeString,
     this.onTvBoard,
     this.onSettings,
     this.onDateSelect,
@@ -264,8 +266,8 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
       height: preferredSize.height + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 4,
-        left: 12,
-        right: 12,
+        left: 10,
+        right: 8,
         bottom: 6,
       ),
       decoration: BoxDecoration(
@@ -281,8 +283,8 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           // Tactical Reticle Icon & Title Group
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF0B111A) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(8),
@@ -291,7 +293,7 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
                 width: 1.2,
               ),
             ),
-            child: Icon(Icons.gps_fixed, size: 20, color: cyan),
+            child: Icon(Icons.gps_fixed, size: 19, color: cyan),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -302,15 +304,42 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    'DISPATCH CONTROL',
-                    style: TextStyle(
-                      fontFamily: HedgeTokens.cyberFont,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                      color: isDark ? Colors.white : p.text,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'HEDGE',
+                        style: TextStyle(
+                          fontFamily: HedgeTokens.cyberFont,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                          color: isDark ? Colors.white : p.text,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: cyan.withValues(alpha: isDark ? 0.2 : 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: cyan.withValues(alpha: 0.6),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          'DISPATCH CONTROL',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                            color: cyan,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 1),
@@ -333,70 +362,99 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
 
-          // Right Status Pill & Clock
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF060B12) : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: cyan.withValues(alpha: 0.5),
-                    width: 0.9,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: cyan,
-                        shape: BoxShape.circle,
+          // Right Status Pill & Clock (Flexible & Scalable to prevent overflow)
+          Flexible(
+            fit: FlexFit.loose,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF060B12) : const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: cyan.withValues(alpha: 0.5),
+                        width: 0.9,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: cyan,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ONLINE · LOKAL',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: cyan,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (timeString != null)
                     Text(
-                      'ONLINE · LOKAL',
+                      timeString!,
                       style: TextStyle(
                         fontFamily: HedgeTokens.cyberFont,
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.0,
                         color: cyan,
+                        fontFeatures: HedgeTokens.numberFeatures,
                       ),
+                    )
+                  else
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final now =
+                            ref.watch(clockProvider).value ?? DateTime.now();
+                        final timeStr =
+                            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+                        return Text(
+                          timeStr,
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                            color: cyan,
+                            fontFeatures: HedgeTokens.numberFeatures,
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                timeString,
-                style: TextStyle(
-                  fontFamily: HedgeTokens.cyberFont,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
-                  color: cyan,
-                  fontFeatures: HedgeTokens.numberFeatures,
-                ),
-              ),
-            ],
+            ),
           ),
 
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           // Shortcut icons
           IconButton(
             tooltip: 'Papan keberangkatan',
             onPressed: onTvBoard,
             icon: const Icon(Icons.tv, size: 19),
             padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
           IconButton(
@@ -404,6 +462,7 @@ class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: onSettings,
             icon: const Icon(Icons.tune, size: 19),
             padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
@@ -431,10 +490,10 @@ class CockpitMfdNavBar extends StatelessWidget {
     final bg = isDark ? const Color(0xFF070B12) : p.surface;
 
     final items = const [
-      (Icons.gps_fixed, '01 · JADWAL'),
-      (Icons.directions_bus, '02 · ARMADA'),
-      (Icons.reorder, '03 · URUTAN'),
-      (Icons.alt_route, '04 · RUTE'),
+      (Icons.gps_fixed, '01', 'Jadwal'),
+      (Icons.directions_bus, '02', 'Armada'),
+      (Icons.reorder, '03', 'Urutan'),
+      (Icons.alt_route, '04', 'Rute'),
     ];
 
     return Container(
@@ -442,8 +501,8 @@ class CockpitMfdNavBar extends StatelessWidget {
       padding: EdgeInsets.only(
         left: 6,
         right: 6,
-        top: 6,
-        bottom: MediaQuery.of(context).padding.bottom + 6,
+        top: 4,
+        bottom: MediaQuery.of(context).padding.bottom + 4,
       ),
       decoration: BoxDecoration(
         color: bg,
@@ -460,7 +519,8 @@ class CockpitMfdNavBar extends StatelessWidget {
             Expanded(
               child: _MfdNavButton(
                 icon: items[i].$1,
-                label: items[i].$2,
+                code: items[i].$2,
+                label: items[i].$3,
                 selected: selectedIndex == i,
                 onTap: () => onDestinationSelected(i),
                 isDark: isDark,
@@ -475,6 +535,7 @@ class CockpitMfdNavBar extends StatelessWidget {
 
 class _MfdNavButton extends StatelessWidget {
   final IconData icon;
+  final String code;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -483,6 +544,7 @@ class _MfdNavButton extends StatelessWidget {
 
   const _MfdNavButton({
     required this.icon,
+    required this.code,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -501,7 +563,7 @@ class _MfdNavButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 3),
         decoration: BoxDecoration(
           color: selected
               ? (isDark
@@ -525,26 +587,39 @@ class _MfdNavButton extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: HedgeTokens.cyberFont,
-                  fontSize: 10,
-                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                  letterSpacing: 0.5,
-                  color: color,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(height: 1),
+                Text(
+                  code,
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: selected ? color : color.withValues(alpha: 0.7),
+                  ),
                 ),
-              ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 10.5,
+                    fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
