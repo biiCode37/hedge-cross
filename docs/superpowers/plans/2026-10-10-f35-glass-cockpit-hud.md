@@ -33,7 +33,7 @@
   - `CockpitSectionHeader`: widget penanda seksi dengan recessed capsule badge.
   - `CockpitStatusBadge`: widget indikator status LED dot dengan gaya neon.
 
-- [ ] **Step 1: Buat failing test untuk CockpitFrame dan CockpitStatusBadge**
+- [x] **Step 1: Buat failing test untuk CockpitFrame dan CockpitStatusBadge**
 
 ```dart
 // test/cockpit_components_test.dart
@@ -79,12 +79,12 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Jalankan test untuk memverifikasi kegagalan (file belum ada)**
+- [x] **Step 2: Jalankan test untuk memverifikasi kegagalan (file belum ada)**
 
 Run: `flutter test test/cockpit_components_test.dart`
 Expected: FAIL ("Target of URI doesn't exist: 'package:hedge_flutter/ui/cockpit_components.dart'")
 
-- [ ] **Step 3: Implementasikan CockpitFrame, CockpitFramePainter, CockpitSectionHeader, dan CockpitStatusBadge**
+- [x] **Step 3: Implementasikan CockpitFrame, CockpitFramePainter, CockpitSectionHeader, dan CockpitStatusBadge**
 
 ```dart
 // lib/ui/cockpit_components.dart
@@ -313,12 +313,12 @@ class CockpitStatusBadge extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 4: Jalankan test untuk memverifikasi kelulusan**
+- [x] **Step 4: Jalankan test untuk memverifikasi kelulusan**
 
 Run: `flutter test test/cockpit_components_test.dart`
 Expected: PASS ("All tests passed!")
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ui/cockpit_components.dart test/cockpit_components_test.dart; git commit -m "feat: implementasi CockpitFrame dan CockpitStatusBadge"
@@ -337,7 +337,7 @@ git add lib/ui/cockpit_components.dart test/cockpit_components_test.dart; git co
   - `AvionicsTopBar`: AppBar pengganti dengan header taktis, live clock WIB, status pill `[ONLINE • LOKAL]`, serta shortcut TV dan Pengaturan.
   - `CockpitMfdNavBar`: NavigationBar pengganti dengan 4 tombol bezel chamfered (`01 · JADWAL`, `02 · ARMADA`, `03 · URUTAN`, `04 · RUTE`).
 
-- [ ] **Step 1: Tambahkan test case untuk AvionicsTopBar dan CockpitMfdNavBar**
+- [x] **Step 1: Tambahkan test case untuk AvionicsTopBar dan CockpitMfdNavBar**
 
 ```dart
 // Append to test/cockpit_components_test.dart
@@ -370,7 +370,7 @@ git add lib/ui/cockpit_components.dart test/cockpit_components_test.dart; git co
   });
 ```
 
-- [ ] **Step 2: Jalankan test untuk memverifikasi kegagalan**
+- [x] **Step 2: Jalankan test untuk memverifikasi kegagalan**
 
 Run: `flutter test test/cockpit_components_test.dart`
 Expected: FAIL ("The getter 'CockpitMfdNavBar' isn't defined")
@@ -698,12 +698,12 @@ class _MfdNavButton extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 4: Jalankan test untuk memverifikasi kelulusan**
+- [x] **Step 4: Jalankan test untuk memverifikasi kelulusan**
 
 Run: `flutter test test/cockpit_components_test.dart`
 Expected: PASS ("All tests passed!")
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ui/cockpit_components.dart test/cockpit_components_test.dart; git commit -m "feat: implementasi AvionicsTopBar dan CockpitMfdNavBar"
@@ -722,24 +722,24 @@ git add lib/ui/cockpit_components.dart test/cockpit_components_test.dart; git co
 - Consumes:
   - `AvionicsTopBar` dan `CockpitMfdNavBar` dari `lib/ui/cockpit_components.dart`.
 
-- [ ] **Step 1: Ganti AppBar dan NavigationBar standar dengan AvionicsTopBar dan CockpitMfdNavBar di `lib/ui/app.dart`**
+- [x] **Step 1: Ganti AppBar dan NavigationBar standar dengan AvionicsTopBar dan CockpitMfdNavBar di `lib/ui/app.dart`**
 
 Perbarui baris Scaffold di `HomeScreen.build`:
 1. Ganti `appBar: AppBar(...)` dengan `appBar: AvionicsTopBar(...)` yang menyalurkan waktu live dari `clockProvider`, status rute aktif, tombol TV, dan Pengaturan.
 2. Ganti `bottomNavigationBar: NavigationBar(...)` dengan `bottomNavigationBar: CockpitMfdNavBar(...)`.
 3. Tambahkan styling MFD chip selector pada rute bar horizontal di bawah top bar.
 
-- [ ] **Step 2: Jalankan static analysis Dart**
+- [x] **Step 2: Jalankan static analysis Dart**
 
 Run: `dart analyze`
 Expected: 0 issues found.
 
-- [ ] **Step 3: Jalankan seluruh test suite Flutter untuk memverifikasi integrasi**
+- [x] **Step 3: Jalankan seluruh test suite Flutter untuk memverifikasi integrasi**
 
 Run: `flutter test`
 Expected: 72 test suites PASS 100%.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lib/ui/app.dart; git commit -m "feat: integrasi AvionicsTopBar dan CockpitMfdNavBar ke HomeScreen"
@@ -754,17 +754,17 @@ git add lib/ui/app.dart; git commit -m "feat: integrasi AvionicsTopBar dan Cockp
 - Test: `test/design_system_test.dart`
 - Test: `test/alarm_test.dart`
 
-- [ ] **Step 1: Uji mode kontras ganda Dark & Light pada resolusi 320x640 dengan textScaleFactor 1.6x**
+- [x] **Step 1: Uji mode kontras ganda Dark & Light pada resolusi 320x640 dengan textScaleFactor 1.6x**
 
 Jalankan: `flutter test test/design_system_test.dart`
 Expected: PASS tanpa RenderFlex overflow.
 
-- [ ] **Step 2: Jalankan kompilasi unit test Android native**
+- [x] **Step 2: Jalankan kompilasi unit test Android native**
 
 Jalankan: `cd android && ./gradlew :app:testDebugUnitTest && cd ..`
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 3: Verifikasi status git pada branch `devmode`**
+- [x] **Step 3: Verifikasi status git pada branch `devmode`**
 
 Jalankan: `git status`
 Expected: clean working directory pada branch `devmode`.
