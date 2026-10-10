@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../domain/models.dart';
+import 'cockpit_components.dart';
+import 'design_system.dart';
 
 class ConfigurationSheet extends StatefulWidget {
   const ConfigurationSheet({super.key, required this.route});
@@ -89,38 +91,56 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
         },
       );
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-    child: SizedBox(
-      height:
-          (MediaQuery.sizeOf(context).height -
-              MediaQuery.viewInsetsOf(context).bottom -
-              MediaQuery.viewPaddingOf(context).top) *
-          .86,
-      child: Form(
-        key: form,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Atur ${widget.route.name}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) {
+    final p = context.hedge;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SizedBox(
+        height:
+            (MediaQuery.sizeOf(context).height -
+                MediaQuery.viewInsetsOf(context).bottom -
+                MediaQuery.viewPaddingOf(context).top) *
+            .86,
+        child: Form(
+          key: form,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const CockpitStatusBadge(
+                            label: 'AVIONICS CONFIG',
+                            isAmber: false,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Atur ${widget.route.name}',
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                              color: isDark ? Colors.white : p.text,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
               ),
-            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -228,7 +248,7 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Suara alarm'),
                       subtitle: const Text(
-                        'TTS Bahasa Indonesia mengikuti volume Alarm Android.',
+                        'TTS Bahasa Indonesia mengikuti volume Media/Speaker Android.',
                       ),
                       value: sound,
                       onChanged: (v) => setState(() => sound = v),
@@ -254,7 +274,22 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isDark
+                        ? cyan.withValues(alpha: 0.22)
+                        : p.focusSurface,
+                    foregroundColor: cyan,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: cyan.withValues(alpha: isDark ? 0.8 : 0.9),
+                        width: 1.2,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.check, size: 18),
                   onPressed: () {
                     if (!form.currentState!.validate()) return;
                     if (alarm &&
@@ -314,13 +349,21 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                       ),
                     );
                   },
-                  child: const Text('Simpan pengaturan'),
+                  label: Text(
+                    'Simpan pengaturan',
+                    style: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

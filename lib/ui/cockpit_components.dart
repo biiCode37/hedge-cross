@@ -263,6 +263,86 @@ class CockpitStatusBadge extends StatelessWidget {
   }
 }
 
+/// Tactical chamfered manifest card with dual-tone borders and cyber styling.
+class CockpitManifestCard extends StatelessWidget {
+  final Widget? leading;
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool isAmber;
+  final EdgeInsetsGeometry padding;
+
+  const CockpitManifestCard({
+    super.key,
+    this.leading,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.isAmber = false,
+    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.hedge;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
+    final amber = isDark ? const Color(0xFFFF9800) : p.amberInk;
+    final surface = isDark ? const Color(0xFF0A0F18) : p.surface;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: CustomPaint(
+            painter: CockpitFramePainter(
+              cyanColor: cyan,
+              amberColor: amber,
+              surfaceColor: surface,
+              isDark: isDark,
+              chamfer: 8.0,
+              isAmber: isAmber,
+            ),
+            child: Padding(
+              padding: padding,
+              child: Row(
+                children: [
+                  if (leading != null) ...[
+                    leading!,
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        title,
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 3),
+                          subtitle!,
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (trailing != null) ...[
+                    const SizedBox(width: 8),
+                    trailing!,
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Tactical Top Avionics Flight Header replacing default Material AppBar.
 class AvionicsTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String activeRouteName;

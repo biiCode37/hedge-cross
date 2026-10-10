@@ -699,78 +699,177 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     final units = route.units
         .where((u) => u.number.toLowerCase().contains(fleetQuery.toLowerCase()))
         .toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
+    final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
+    final p = context.hedge;
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Row(
             children: [
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : p.text,
+                  ),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: cyan, size: 20),
                     labelText: 'Cari nomor unit',
+                    labelStyle: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF0A0F18) : p.surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: cyan.withValues(alpha: isDark ? 0.3 : 0.4),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: cyan, width: 1.5),
+                    ),
                   ),
                   onChanged: (v) => setState(() => fleetQuery = v),
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: 'Tambah unit',
-                onPressed: () async {
-                  final number = await ask('Tambah unit', hint: 'Nomor unit');
-                  if (number != null) await controller.addUnit(route, number);
-                },
-                icon: const Icon(Icons.add),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 48,
+                width: 48,
+                child: IconButton.filled(
+                  tooltip: 'Tambah unit',
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark ? cyan.withValues(alpha: 0.2) : p.focusSurface,
+                    foregroundColor: cyan,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: cyan.withValues(alpha: isDark ? 0.7 : 0.9),
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final number = await ask('Tambah unit', hint: 'Nomor unit');
+                    if (number != null) await controller.addUnit(route, number);
+                  },
+                  icon: const Icon(Icons.add),
+                ),
               ),
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '${route.activeUnits.length} aktif / ${route.units.length} unit',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              const CockpitStatusBadge(
+                label: 'FLEET MANIFEST',
+                isAmber: false,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${route.activeUnits.length} aktif / ${route.units.length} unit',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                    color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
+        const SizedBox(height: 4),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             itemCount: units.length,
             itemBuilder: (_, i) {
               final unit = units[i];
-              return Card(
-                child: ListTile(
-                  leading: const Icon(Icons.directions_bus),
-                  title: Text('Unit ${unit.number}'),
-                  subtitle: Text(
-                    unit.active ? 'Aktif untuk jadwal baru' : 'Tidak aktif',
+              return CockpitManifestCard(
+                key: ValueKey('unit-card-${unit.id}'),
+                isAmber: !unit.active,
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF070B12) : p.raised,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: unit.active
+                          ? cyan.withValues(alpha: isDark ? 0.6 : 0.8)
+                          : amber.withValues(alpha: isDark ? 0.4 : 0.6),
+                      width: 1.2,
+                    ),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Switch(
-                        value: unit.active,
-                        onChanged: (v) =>
-                            controller.setUnitActive(route, unit, v),
-                      ),
-                      IconButton(
-                        tooltip: 'Hapus unit',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          if (await confirm(
-                            'Hapus unit ${unit.number}?',
-                            'Jadwal tersimpan tetap memuat histori unit ini.',
-                          )) {
-                            await controller.deleteUnit(route, unit.id);
-                          }
-                        },
-                      ),
-                    ],
+                  child: Icon(
+                    Icons.directions_bus,
+                    size: 20,
+                    color: unit.active ? cyan : amber,
                   ),
+                ),
+                title: Text(
+                  'Unit ${unit.number}',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                    color: isDark ? Colors.white : p.text,
+                  ),
+                ),
+                subtitle: Text(
+                  unit.active ? 'Aktif untuk jadwal baru' : 'Tidak aktif',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 11.5,
+                    color: unit.active
+                        ? (isDark ? const Color(0xFF94A3B8) : p.muted)
+                        : (isDark ? amber.withValues(alpha: 0.8) : p.amberInk),
+                  ),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Switch(
+                      value: unit.active,
+                      activeTrackColor: cyan.withValues(alpha: 0.5),
+                      activeThumbColor: cyan,
+                      onChanged: (v) =>
+                          controller.setUnitActive(route, unit, v),
+                    ),
+                    IconButton(
+                      tooltip: 'Hapus unit',
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                        size: 20,
+                      ),
+                      onPressed: () async {
+                        if (await confirm(
+                          'Hapus unit ${unit.number}?',
+                          'Jadwal tersimpan tetap memuat histori unit ini.',
+                        )) {
+                          await controller.deleteUnit(route, unit.id);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               );
             },
@@ -782,58 +881,126 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
 
   Widget _order(HedgeRoute route) {
     final units = route.activeUnits;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
+    final p = context.hedge;
+
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Tarik unit atau gunakan panah. Urutan berlaku setelah jadwal dibuat ulang.',
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CockpitStatusBadge(
+                label: 'ROTATION ORDER',
+                isAmber: true,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tarik unit atau gunakan panah. Urutan berlaku setelah jadwal dibuat ulang.',
+                style: TextStyle(
+                  fontFamily: HedgeTokens.cyberFont,
+                  fontSize: 11.5,
+                  color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(
           child: ReorderableListView.builder(
             buildDefaultDragHandles: false,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             itemCount: units.length,
             onReorder: (old, next) {
               if (next > old) next--;
               _move(route, units, old, next);
             },
-            itemBuilder: (_, i) => Card(
+            itemBuilder: (_, i) => CockpitManifestCard(
               key: ValueKey(units[i].id),
-              child: ListTile(
-                leading: Text(
-                  '${i + 1}',
-                  style: TextStyle(fontSize: 22, color: context.hedge.amberInk),
+              isAmber: true,
+              leading: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF141008) : p.warningSurface,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: amber.withValues(alpha: isDark ? 0.6 : 0.8),
+                    width: 1.2,
+                  ),
                 ),
-                title: Text('Unit ${units[i].number}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Naik',
-                      onPressed: i == 0
-                          ? null
-                          : () => _move(route, units, i, i - 1),
-                      icon: const Icon(Icons.arrow_upward),
+                alignment: Alignment.center,
+                child: Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: amber,
+                  ),
+                ),
+              ),
+              title: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Unit ${units[i].number}',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                    color: isDark ? Colors.white : p.text,
+                  ),
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Naik',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: i == 0
+                        ? null
+                        : () => _move(route, units, i, i - 1),
+                    icon: Icon(
+                      Icons.arrow_upward,
+                      size: 20,
+                      color: i == 0
+                          ? (isDark ? const Color(0xFF334155) : p.border)
+                          : (isDark ? Colors.white : p.text),
                     ),
-                    IconButton(
-                      tooltip: 'Turun',
-                      onPressed: i == units.length - 1
-                          ? null
-                          : () => _move(route, units, i, i + 1),
-                      icon: const Icon(Icons.arrow_downward),
+                  ),
+                  IconButton(
+                    tooltip: 'Turun',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: i == units.length - 1
+                        ? null
+                        : () => _move(route, units, i, i + 1),
+                    icon: Icon(
+                      Icons.arrow_downward,
+                      size: 20,
+                      color: i == units.length - 1
+                          ? (isDark ? const Color(0xFF334155) : p.border)
+                          : (isDark ? Colors.white : p.text),
                     ),
-                    ReorderableDragStartListener(
-                      index: i,
-                      child: const SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: Icon(Icons.drag_handle),
+                  ),
+                  ReorderableDragStartListener(
+                    index: i,
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: isDark ? const Color(0xFF94A3B8) : p.muted,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -856,49 +1023,175 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  Widget _routes(Workspace workspace) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _addRoute,
-                icon: const Icon(Icons.add),
-                label: const Text('Tambah rute'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () async {
-                final failures = await controller.generateAll();
-                toast(
-                  failures.isEmpty
-                      ? 'Jadwal semua rute aktif tersimpan.'
-                      : failures.join('\n'),
-                );
-              },
-              child: const Text('Buat semua'),
-            ),
-          ],
-        ),
-      ),
-      Expanded(
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          itemCount: workspace.routes.length,
-          itemBuilder: (_, i) {
-            final r = workspace.routes[i];
-            return Card(
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: context.hedge.raised,
-                  child: Icon(Icons.alt_route, color: context.hedge.cyanInk),
+  Widget _routes(Workspace workspace) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
+    final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
+    final p = context.hedge;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isDark ? cyan.withValues(alpha: 0.22) : p.focusSurface,
+                    foregroundColor: cyan,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: cyan.withValues(alpha: isDark ? 0.8 : 0.9),
+                        width: 1.2,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                  ),
+                  onPressed: _addRoute,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Tambah rute',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                 ),
-                title: Text(r.name),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                flex: 2,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: amber,
+                    side: BorderSide(
+                      color: amber.withValues(alpha: isDark ? 0.7 : 0.85),
+                      width: 1.2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                  ),
+                  onPressed: () async {
+                    final failures = await controller.generateAll();
+                    toast(
+                      failures.isEmpty
+                          ? 'Jadwal semua rute aktif tersimpan.'
+                          : failures.join('\n'),
+                    );
+                  },
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Buat semua',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              const CockpitStatusBadge(
+                label: 'ROUTE SECTORS',
+                isAmber: false,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${workspace.routes.length} sektor terkonfigurasi',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                    color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            itemCount: workspace.routes.length,
+            itemBuilder: (_, i) {
+              final r = workspace.routes[i];
+              return CockpitManifestCard(
+                key: ValueKey('route-card-${r.id}'),
+                isAmber: !r.participates,
+                onTap: () {
+                  setState(() => roundFilter = null);
+                  controller.selectRoute(r.id);
+                  setState(() => destination = 0);
+                },
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF070B12) : p.raised,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Color(r.color).withValues(alpha: 0.8),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.alt_route,
+                    size: 20,
+                    color: Color(r.color),
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        r.name,
+                        style: TextStyle(
+                          fontFamily: HedgeTokens.cyberFont,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                          color: isDark ? Colors.white : p.text,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (!r.participates) ...[
+                      const SizedBox(width: 8),
+                      const CockpitStatusBadge(
+                        label: 'NONAKTIF',
+                        isAmber: true,
+                      ),
+                    ],
+                  ],
+                ),
                 subtitle: Text(
                   '${r.activeUnits.length} unit · ${r.config.start}–${r.config.end}',
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                  ),
                 ),
                 trailing: PopupMenuButton<String>(
                   tooltip: 'Opsi rute',
@@ -961,17 +1254,13 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ],
                 ),
-                onTap: () {
-                  controller.selectRoute(r.id);
-                  setState(() => destination = 0);
-                },
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
   Widget _alarm(Workspace workspace, DateTime now) {
     final items =
         <({HedgeRoute route, ScheduleRevision revision, Departure row})>[];

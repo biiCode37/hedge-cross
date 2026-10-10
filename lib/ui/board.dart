@@ -39,14 +39,12 @@ class _BoardState extends ConsumerState<BoardScreen> {
             DateTime at,
           })
         >[];
-    final now = ref.read(clockProvider).value ?? DateTime.now();
     for (final route in routes) {
       final revision = route.schedule;
       if (revision == null) continue;
       for (final row in revision.departures) {
         final at = plannedInstant(revision.date, row.minute);
-        if (!workspace.hasDeparted(row.id) &&
-            (!at.isBefore(now.toUtc()) || row.id == focus?.departure.id)) {
+        if (!workspace.hasDeparted(row.id)) {
           rows.add((route: route, revision: revision, row: row, at: at));
         }
       }
@@ -127,15 +125,9 @@ class _BoardState extends ConsumerState<BoardScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: focus == null
-                    ? Container(
+                    ? CockpitFrame(
+                        title: 'PAPAN KEBERANGKATAN',
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF0C1017)
-                              : p.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: p.border.withValues(alpha: 0.6)),
-                        ),
                         child: Center(
                           child: Text(
                             'Tidak ada keberangkatan mendatang',
@@ -151,6 +143,21 @@ class _BoardState extends ConsumerState<BoardScreen> {
                     : DepartureFocusPanel(
                         focus: focus,
                         large: MediaQuery.sizeOf(context).width >= 600,
+                        onDispatch: () async {
+                          final controller = ref.read(workspaceProvider.notifier);
+                          if (await controller.record(
+                            focus.revision,
+                            focus.departure,
+                            'departed',
+                          )) {
+                            if (!mounted) return;
+                            showDepartureUndoSnackBar(
+                              this.context,
+                              unitNumber: focus.departure.unitNumber,
+                              onUndo: () => controller.unrecord(focus.departure.id),
+                            );
+                          }
+                        },
                       ),
               ),
             ),
@@ -393,7 +400,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                         focused: isFocused,
                         activeColor: activeColor,
                         mutedColor: p.muted,
-                        railColor: isDark ? const Color(0xFF1E293B) : p.border,
+                        railColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                       ),
                     ),
                   ),
@@ -580,7 +587,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
                           child: Text(
-                            due ? 'WAKTU TIBA' : 'HITUNG MUNDUR',
+                            due ? 'WAKTU BERANGKAT' : 'HITUNG MUNDUR',
                             style: TextStyle(
                               fontFamily: HedgeTokens.cyberFont,
                               fontSize: 8,
