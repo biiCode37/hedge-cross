@@ -15,6 +15,7 @@ class AlarmDeliveryService : Service() {
         private var running: WeakReference<AlarmDeliveryService>? = null
         fun refreshIfRunning(): Boolean {
             val service = running?.get() ?: return false
+            if (service.stopping) return false
             service.handler.post { service.refresh() }
             return true
         }
@@ -29,7 +30,11 @@ class AlarmDeliveryService : Service() {
                 AlarmEngine.deliveryIssue(context, "Android belum mengizinkan layanan alarm: ${error.message}")
             }
         }
-        fun stopPreview() { running?.get()?.let { it.handler.post { it.preview = null; it.refresh() } } }
+        fun stopPreview() {
+            running?.get()?.let {
+                if (!it.stopping) it.handler.post { it.preview = null; it.refresh() }
+            }
+        }
     }
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var overlay: AlarmOverlay
@@ -38,12 +43,18 @@ class AlarmDeliveryService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var awakeUntil = 0L
     private var foregroundTypes = -1
+    private var stopping = false
     private val tick = Runnable { refresh() }
     override fun onCreate() {
-        super.onCreate(); running = WeakReference(this); overlay = AlarmOverlay(this)
+        super.onCreate()
+        stopping = false
+        running = WeakReference(this)
+        overlay = AlarmOverlay(this)
     }
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        stopping = false
+        running = WeakReference(this)
         if (intent?.getBooleanExtra("preview", false) == true) {
             val now = System.currentTimeMillis()
             preview = ActiveAlarm(AlarmSpec("preview:$now", "preview", "preview", "preview", "JAK.115", "1865",
@@ -83,7 +94,10 @@ class AlarmDeliveryService : Service() {
         preview = test
         val events = alarms + listOfNotNull(test)
         if (events.none { it.event.sound || (it.event.fullScreen && Settings.canDrawOverlays(this)) }) {
+            stopping = true
+            if (running?.get() === this) running = null
             overlay.close(); speech?.close(); speech = null
+            foregroundTypes = -1
             stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return
         }
         if (!foreground(events)) return
@@ -101,10 +115,12 @@ class AlarmDeliveryService : Service() {
         handler.postDelayed(tick, 250)
     }
     override fun onDestroy() {
+        stopping = true
         if (running?.get() === this) running = null
         handler.removeCallbacksAndMessages(null)
         overlay.close(); speech?.close(); speech = null
         wakeLock?.let { if (it.isHeld) it.release() }; wakeLock = null
+        foregroundTypes = -1
         super.onDestroy()
     }
 }

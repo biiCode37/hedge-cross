@@ -110,9 +110,12 @@ object AlarmEngine {
         putActive(s, kept)
         s.put("plan", payload.getJSONArray("events"))
         // Completed IDs stay until the pending action is accepted by SQLite.
+        val prevActiveUnvoiced = active(s).filter { !it.event.sound }.map { it.event.key }.toSet()
+        val reenabledKeys = kept.filter { it.event.sound && it.event.key in prevActiveUnvoiced }.map { it.event.key }.toSet()
         val keepKeys = plan(s).map { it.key }.toSet() + kept.map { it.event.key }
         s.put("delivered", JSONArray(strings(s.optJSONArray("delivered")).filter { it in keepKeys }))
-        s.put("spoken", JSONArray(strings(s.optJSONArray("spoken")).filter { it in keepKeys }))
+        val spokenFiltered = strings(s.optJSONArray("spoken")).filter { it in keepKeys && it !in reenabledKeys }
+        s.put("spoken", JSONArray(spokenFiltered))
         val unaccepted = objects(s.optJSONArray("actions")).filter { it.optString("kind") == "departed" }.map { it.optString("departureId") }.toSet()
         val actualInSQLite = strings(payload.optJSONArray("actual"))
         s.put("completed", JSONArray(AlarmTimeline.retainCompleted(strings(s.optJSONArray("completed")), unaccepted, actualInSQLite).toList()))
@@ -186,8 +189,8 @@ object AlarmEngine {
     }
     @Synchronized fun visible(c: Context): List<ActiveAlarm> = AlarmTimeline.visible(current(c), System.currentTimeMillis())
     fun openWhenForeground(c: Context) {
-        val activity = MainActivity.foreground?.get() ?: return
-        if (visible(c).isNotEmpty() && !activity.isFinishing) activity.startActivity(Intent(c, AlarmActivity::class.java))
+        // MainActivity (Flutter) handles foreground alarms via ForegroundAlarmOverlay.
+        // Never launch or interrupt MainActivity with the native AlarmActivity.
     }
     @Synchronized fun complete(c: Context, event: AlarmSpec) {
         val s = load(c)

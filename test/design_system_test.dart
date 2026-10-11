@@ -80,12 +80,12 @@ void main() {
     },
   );
   test(
-    'Focus remains stable across ticks and uses due hold without implying actual',
+    'Focus remains stable across ticks and keeps un-departed unit focused even past schedule',
     () {
       final workspace = sampleWorkspace(DateTime.utc(2026, 10, 5));
       final route = workspace.activeRoute!;
       final revision = route.schedule!;
-      final row = revision.departures[1];
+      final row = revision.departures[0];
       final at = plannedInstant(revision.date, row.minute);
       final a = selectDispatchFocus(
         workspace,
@@ -113,7 +113,9 @@ void main() {
         at.add(Duration(seconds: route.alarmDuration)),
         routeId: route.id,
       )!;
-      expect(next.departure.id, revision.departures[2].id);
+      // Unit remains focused if un-departed (BUG-01 fix)
+      expect(next.departure.id, row.id);
+      expect(next.due, true);
       final actual = workspace.copyWith(
         events: [
           DispatchEvent(
@@ -127,7 +129,7 @@ void main() {
       );
       expect(
         selectDispatchFocus(actual, at, routeId: route.id)!.departure.id,
-        revision.departures[2].id,
+        revision.departures[1].id,
       );
       final ack = workspace.copyWith(
         events: [
@@ -147,11 +149,11 @@ void main() {
     },
   );
   test(
-    'Countdown preserves sub-second future, hour display and clamps overdue',
+    'Countdown preserves sub-second future, hour display and formats overdue with plus',
     () {
       expect(formatCountdown(const Duration(milliseconds: 500)), '00:01');
       expect(formatCountdown(const Duration(hours: 1, seconds: 5)), '01:00:05');
-      expect(formatCountdown(const Duration(seconds: -2)), '00:00');
+      expect(formatCountdown(const Duration(seconds: -2)), '+00:02');
     },
   );
   testWidgets(
@@ -164,7 +166,7 @@ void main() {
       final clock = StreamController<DateTime>();
       addTearDown(clock.close);
       final workspace = sampleWorkspace(DateTime.utc(2026, 10, 5));
-      final row = workspace.activeRoute!.schedule!.departures[1];
+      final row = workspace.activeRoute!.schedule!.departures[0];
       final at = plannedInstant(workspace.date, row.minute);
       await tester.pumpWidget(appFor(workspace, clock.stream));
       clock.add(at.subtract(const Duration(seconds: 100)));

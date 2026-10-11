@@ -64,3 +64,20 @@ Setiap penyelesaian tugas wajib menyertakan:
 - Instruksi implementasi/perbaikan tidak berarti izin build APK. Tunggu perintah eksplisit user untuk membuat APK.
 - Analisis statis, pengujian Dart/Flutter dan kompilasi/unit test Kotlin yang tidak menghasilkan APK tetap boleh dilakukan sesuai task.
 - Tanpa perintah build, laporkan perubahan source dan hasil verifikasi; pertahankan APK yang sudah ada.
+
+### Aturan Manajemen Folder Output APK per Versi (WAJIB)
+- Mulai sekarang, setiap build APK terbaru **WAJIB diletakkan pada folder khusus per versi** (format: `apks/v<versi>/` misal `apks/v2.0.7/`).
+- **Setiap folder APK hanya boleh memiliki tepat 1 file APK** dengan versi yang sesuai (misal: `apks/v2.0.7/hedge-v2.0.7.apk`).
+- Dilarang mencampur atau menumpuk file APK dari berbagai versi dalam folder yang sama.
+
+---
+
+## 6. Standar Dokumentasi Investigasi & Perbaikan (WAJIB)
+
+Setiap investigasi temuan bug dan eksekusi perbaikan/refactor wajib didokumentasikan ke dalam folder khusus yang relevan (`docs/refactor/`).
+Di dalam folder tersebut, buat subfolder untuk setiap sesi/topik perbaikan dengan nama ringkas dan deskriptif (misal: `docs/refactor/<topik-sesi>/`).
+Setiap folder sesi temuan wajib memuat **4 file inti**:
+1. **File Temuan Bug / Permasalahan** (`01-temuan-bug-dan-permasalahan.md`): Analisis mendalam akar masalah (root cause), data flow, dan kondisi pemicu kegagalan.
+2. **File Perbaikan yang Dilakukan** (`02-perbaikan-dan-solusi-kode.md`): Penjelasan arsitektur solusi, detail kode yang diperbaiki, dan file-file yang dimodifikasi.
+3. **File Hasil Pengujian** (`03-verifikasi-dan-hasil-pengujian.md`): Catatan command verifikasi, test case baru, hasil unit/widget test Flutter dan native Android.
+4. **File Analogi & Dampak Non-Teknis** (`04-analogi-dan-dampak-non-teknis.md`): Analogi non-teknis dunia nyata yang mudah dipahami, perbandingan situasi sebelum vs sesudah perbaikan, serta dampak langsung bagi dispatcher di lapangan.

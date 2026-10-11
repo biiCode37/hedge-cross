@@ -47,3 +47,17 @@ flutter test
 ### C. Pengujian Isolasi Jam Digital & Performa Rebuild
 - **Pengujian:** `AvionicsTopBar` dan `CyberBoardTimelineTile` mengisolasi langganan `clockProvider` via widget `Consumer` lokal.
 - **Hasil:** Frame rate stabil, tidak terjadi cascading rebuild pada kontainer utama `HomeScreen` saat jam berdetak setiap detik.
+
+---
+
+## 4. Kompilasi Release APK (`v2.1.0`)
+```bash
+flutter build apk --release
+```
+**Hasil:**
+```
+√ Built build\app\outputs\flutter-apk\app-release.apk (64.7MB)
+```
+- **File Output:** `apks/v2.1.0/hedge-v2.1.0.apk` (Ukuran: 64.7 MB / 67,821,407 bytes)
+- **Kepatuhan Aturan Output APK:** Sesuai standar `AGENTS.md`, folder `apks/v2.1.0/` hanya memuat tepat 1 file APK rilis versi 2.1.0.
+

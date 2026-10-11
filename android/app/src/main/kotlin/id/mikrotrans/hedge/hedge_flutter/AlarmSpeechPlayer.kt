@@ -30,13 +30,30 @@ class AlarmSpeechPlayer(private val context: Context) {
     private var retryAfter = 0L
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         handler.post {
-            if (change < 0) { stopCurrent(); retryAfter = System.currentTimeMillis() + 1000 }
+            when (change) {
+                AudioManager.AUDIOFOCUS_LOSS -> {
+                    stopCurrent()
+                    retryAfter = System.currentTimeMillis() + 1500
+                }
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                    stopCurrent()
+                    retryAfter = System.currentTimeMillis() + 1000
+                }
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    // Do not cancel speech on transient ducking (e.g. keyboard chime, notification ding)
+                }
+            }
         }
     }
     private val focusRequest = if (Build.VERSION.SDK_INT >= 26) AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
         .setAudioAttributes(attributes).setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(focusListener).build() else null
 
     init {
+        initEngine()
+    }
+
+    private fun initEngine() {
+        if (closed) return
         AlarmEngine.speechStatus(context, "Memuat suara Bahasa Indonesia", "")
         engine = TextToSpeech(context.applicationContext) { result -> handler.post { initialized(result) } }
     }
@@ -56,9 +73,15 @@ class AlarmSpeechPlayer(private val context: Context) {
         if (closed) return
         val tts = engine ?: return
         if (result != TextToSpeech.SUCCESS) {
-            AlarmEngine.speechStatus(context, "Mesin TTS belum tersedia", "")
-            ready = true
-            update(latest)
+            AlarmEngine.speechStatus(context, "Mesin TTS belum siap (mencoba ulang)", "")
+            ready = false
+            engine = null
+            try { tts.shutdown() } catch (_: Throwable) {}
+            handler.postDelayed({
+                if (!closed && engine == null) {
+                    initEngine()
+                }
+            }, 1000)
             return
         }
 
@@ -165,7 +188,10 @@ class AlarmSpeechPlayer(private val context: Context) {
     private fun finished(id: String, failed: Boolean) {
         if (closed || current?.event?.key != id) return
         current = null; abandonFocus()
-        if (failed) AlarmEngine.deliveryIssue(context, "Ucapan TTS gagal diputar. Gunakan Uji suara untuk memeriksa mesin TTS.")
+        if (failed) {
+            attempted.remove(id)
+            AlarmEngine.deliveryIssue(context, "Ucapan TTS gagal diputar. Gunakan Uji suara untuk memeriksa mesin TTS.")
+        }
         update(latest)
     }
 

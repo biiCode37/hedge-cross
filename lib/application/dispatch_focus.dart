@@ -28,19 +28,7 @@ DispatchFocus? selectDispatchFocus(
     if (revision == null) continue;
     final rows = revision.departures;
     final dayMs = plannedInstant(revision.date, 0).millisecondsSinceEpoch;
-    final holdMs = route.alarmDuration.clamp(1, 60) * 1000;
-    final minimum = nowMs - dayMs - holdMs;
-    var low = 0;
-    var high = rows.length;
-    while (low < high) {
-      final middle = (low + high) ~/ 2;
-      if (rows[middle].minute * 60000 <= minimum) {
-        low = middle + 1;
-      } else {
-        high = middle;
-      }
-    }
-    for (var i = low; i < rows.length; i++) {
+    for (var i = 0; i < rows.length; i++) {
       final departure = rows[i];
       if (actual.contains(departure.id)) continue;
       final atMs = dayMs + departure.minute * 60000;
@@ -78,9 +66,12 @@ final dispatchFocusProvider = Provider.family<DispatchFocus?, String?>((
 });
 
 String formatCountdown(Duration duration) {
-  final seconds = (duration.inMilliseconds / 1000).ceil().clamp(0, 999999);
+  final isNegative = duration.isNegative;
+  final totalSeconds = (duration.inMilliseconds.abs() / 1000).ceil();
+  final seconds = totalSeconds.clamp(0, 999999);
   final h = seconds ~/ 3600;
   final m = seconds % 3600 ~/ 60;
   final s = seconds % 60;
-  return '${h > 0 ? '${h.toString().padLeft(2, '0')}:' : ''}${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  final prefix = isNegative ? '+' : '';
+  return '$prefix${h > 0 ? '${h.toString().padLeft(2, '0')}:' : ''}${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 }

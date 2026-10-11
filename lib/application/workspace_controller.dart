@@ -259,6 +259,14 @@ class WorkspaceController extends Notifier<AppState> {
     );
   }
 
+  Future<bool> unrecord(String departureId, {String kind = 'departed'}) async {
+    final filtered = state.workspace.events
+        .where((e) => !(e.departureId == departureId && e.kind == kind))
+        .toList();
+    if (filtered.length == state.workspace.events.length) return true;
+    return _save(state.workspace.copyWith(events: filtered));
+  }
+
   Future<bool> importWorkspace(
     Workspace incoming, {
     bool replace = false,

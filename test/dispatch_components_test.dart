@@ -77,4 +77,57 @@ void main() {
 
     expect(find.text('WAKTU BERANGKAT'), findsOneWidget);
   });
+
+  testWidgets('showDepartureUndoSnackBar renders themed content, close button, and undo button', (
+    tester,
+  ) async {
+    var undone = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: hedgeTheme(Brightness.dark),
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () {
+                showDepartureUndoSnackBar(
+                  ctx,
+                  unitNumber: '1001',
+                  onUndo: () => undone = true,
+                );
+              },
+              child: const Text('Show'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Show'));
+    await tester.pump(); // Start SnackBar animation
+    await tester.pump(const Duration(milliseconds: 750)); // Settle animation
+
+    expect(find.text('Keberangkatan Tercatat'), findsOneWidget);
+    expect(find.text('Unit 1001 telah diberangkatkan'), findsOneWidget);
+    expect(find.text('BATALKAN'), findsOneWidget);
+    expect(find.byTooltip('Tutup notifikasi'), findsOneWidget);
+
+    // Tap Close (X) button: SnackBar closes, undone is NOT triggered
+    await tester.tap(find.byTooltip('Tutup notifikasi'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 750));
+    expect(undone, false);
+    expect(find.text('Keberangkatan Tercatat'), findsNothing);
+
+    // Tap Show again, then tap BATALKAN
+    await tester.tap(find.text('Show'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 750));
+    expect(find.text('BATALKAN'), findsOneWidget);
+
+    await tester.tap(find.text('BATALKAN'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 750));
+    expect(undone, true);
+    expect(find.text('Keberangkatan Tercatat'), findsNothing);
+  });
 }

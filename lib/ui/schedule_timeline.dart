@@ -73,7 +73,7 @@ class CyberTimelineTile extends StatelessWidget {
                     focused: focused,
                     activeColor: activeColor,
                     mutedColor: p.muted,
-                    railColor: isDark ? const Color(0xFF1E293B) : p.border,
+                    railColor: isDark ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                   ),
                 ),
               ),
@@ -82,7 +82,7 @@ class CyberTimelineTile extends StatelessWidget {
               // Konten Unit & Status Futuristik (Kanan Rel - Tanpa Card Biasa)
               Expanded(
                 child: InkWell(
-                  onTap: done ? null : onRecord,
+                  onTap: onRecord,
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
@@ -438,7 +438,7 @@ class TransitRailPainter extends CustomPainter {
           canvas,
           Offset(centerX, centerY + nodeRadius + 3),
           Offset(centerX, size.height),
-          railColor.withValues(alpha: 0.4),
+          railColor.withValues(alpha: 0.7),
         );
       } else {
         final bottomColor = done ? activeColor : railColor;

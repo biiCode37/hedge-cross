@@ -109,7 +109,7 @@ void main() {
     clockController.add(DateTime.utc(2026, 10, 7, 7, 5, 10)); // Overdue
     await tester.pumpAndSettle();
     expect(find.text('BOARDING'), findsOneWidget);
-    expect(find.text('WAKTU TIBA'), findsOneWidget);
+    expect(find.text('WAKTU BERANGKAT'), findsOneWidget);
   });
 
   for (final brightness in [Brightness.dark, Brightness.light]) {
