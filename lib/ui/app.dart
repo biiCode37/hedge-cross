@@ -76,6 +76,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   int destination = 0;
   String fleetQuery = '';
+  final Set<String> selectedFleetIds = <String>{};
   int? roundFilter;
   int lastMinute = -1;
   @override
@@ -1005,6 +1006,163 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             ],
           ),
         ),
+        if (units.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () {
+                    final allSelected = units.every((u) => selectedFleetIds.contains(u.id));
+                    setState(() {
+                      if (allSelected) {
+                        for (final u in units) {
+                          selectedFleetIds.remove(u.id);
+                        }
+                      } else {
+                        for (final u in units) {
+                          selectedFleetIds.add(u.id);
+                        }
+                      }
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          units.every((u) => selectedFleetIds.contains(u.id))
+                              ? Icons.check_box_rounded
+                              : (selectedFleetIds.isEmpty
+                                  ? Icons.check_box_outline_blank_rounded
+                                  : Icons.indeterminate_check_box_rounded),
+                          size: 16,
+                          color: cyan,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          units.every((u) => selectedFleetIds.contains(u.id))
+                              ? 'Batal Pilih'
+                              : 'Pilih Semua',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: cyan,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (selectedFleetIds.isNotEmpty)
+                  Text(
+                    '${selectedFleetIds.length} dipilih',
+                    style: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: amber,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        if (selectedFleetIds.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0C1017) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: cyan.withValues(alpha: isDark ? 0.6 : 0.8),
+                  width: 1.2,
+                ),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: cyan.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: cyan.withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        '${selectedFleetIds.length} DIPILIH',
+                        style: TextStyle(
+                          fontFamily: HedgeTokens.cyberFont,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                          color: cyan,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: cyan,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: () async {
+                        final count = selectedFleetIds.length;
+                        await controller.setUnitsActive(route, selectedFleetIds, true);
+                        setState(() => selectedFleetIds.clear());
+                        toast('$count unit berhasil diaktifkan.');
+                      },
+                      icon: const Icon(Icons.check_circle_outline, size: 15),
+                      label: const Text('Aktifkan', style: TextStyle(fontSize: 11.5)),
+                    ),
+                    const SizedBox(width: 4),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: amber,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: () async {
+                        final count = selectedFleetIds.length;
+                        await controller.setUnitsActive(route, selectedFleetIds, false);
+                        setState(() => selectedFleetIds.clear());
+                        toast('$count unit dinonaktifkan.');
+                      },
+                      icon: const Icon(Icons.block, size: 15),
+                      label: const Text('Nonaktif', style: TextStyle(fontSize: 11.5)),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      tooltip: 'Hapus unit terpilih',
+                      style: IconButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.all(4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: () async {
+                        final count = selectedFleetIds.length;
+                        if (await confirm(
+                          'Hapus $count unit terpilih?',
+                          'Unit yang dihapus akan dikeluarkan dari rute ini. Jadwal tersimpan tetap memuat histori unit.',
+                        )) {
+                          await controller.deleteUnits(route, selectedFleetIds);
+                          setState(() => selectedFleetIds.clear());
+                          toast('$count unit berhasil dihapus.');
+                        }
+                      },
+                      icon: const Icon(Icons.delete_forever, size: 18),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         const SizedBox(height: 4),
         Expanded(
           child: ListView.builder(
@@ -1012,26 +1170,40 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             itemCount: units.length,
             itemBuilder: (_, i) {
               final unit = units[i];
+              final isSelected = selectedFleetIds.contains(unit.id);
               return CockpitManifestCard(
                 key: ValueKey('unit-card-${unit.id}'),
                 isAmber: !unit.active,
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      selectedFleetIds.remove(unit.id);
+                    } else {
+                      selectedFleetIds.add(unit.id);
+                    }
+                  });
+                },
                 leading: Container(
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF070B12) : p.raised,
+                    color: isSelected
+                        ? cyan.withValues(alpha: 0.2)
+                        : (isDark ? const Color(0xFF070B12) : p.raised),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: unit.active
-                          ? cyan.withValues(alpha: isDark ? 0.6 : 0.8)
-                          : amber.withValues(alpha: isDark ? 0.4 : 0.6),
-                      width: 1.2,
+                      color: isSelected
+                          ? cyan
+                          : (unit.active
+                              ? cyan.withValues(alpha: isDark ? 0.6 : 0.8)
+                              : amber.withValues(alpha: isDark ? 0.4 : 0.6)),
+                      width: isSelected ? 1.6 : 1.2,
                     ),
                   ),
                   child: Icon(
-                    Icons.directions_bus,
+                    isSelected ? Icons.check_box_rounded : Icons.directions_bus,
                     size: 20,
-                    color: unit.active ? cyan : amber,
+                    color: isSelected ? cyan : (unit.active ? cyan : amber),
                   ),
                 ),
                 title: Text(
@@ -1043,9 +1215,12 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     letterSpacing: 0.5,
                     color: isDark ? Colors.white : p.text,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(
                   unit.active ? 'Aktif untuk jadwal baru' : 'Tidak aktif',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: HedgeTokens.cyberFont,
                     fontSize: 11.5,
