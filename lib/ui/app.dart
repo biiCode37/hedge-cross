@@ -186,19 +186,254 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         ),
       ) ??
       false;
+  Future<int?> _promptGenerate(HedgeRoute route) async {
+    int startRound = route.config.startRound;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
+    final p = context.hedge;
+
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF0C1017) : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark ? cyan.withValues(alpha: 0.5) : cyan.withValues(alpha: 0.7),
+                  width: 1.5,
+                ),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: cyan.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: cyan.withValues(alpha: 0.4)),
+                    ),
+                    child: Icon(Icons.event_available, color: cyan, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'BUAT JADWAL OPERASIONAL',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            letterSpacing: 0.5,
+                            color: isDark ? Colors.white : p.text,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${route.name} · ${route.activeUnits.length} Unit Aktif',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 11.5,
+                            color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    'Jadwal baru dihitung berdasarkan armada aktif dan konfigurasi rute.',
+                    style: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF070B12) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: cyan.withValues(alpha: isDark ? 0.3 : 0.4),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.sync_rounded, size: 16, color: cyan),
+                            const SizedBox(width: 6),
+                            Text(
+                              'MULAI DARI RITASE KE-',
+                              style: TextStyle(
+                                fontFamily: HedgeTokens.cyberFont,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                letterSpacing: 0.6,
+                                color: cyan,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton.filled(
+                              style: IconButton.styleFrom(
+                                backgroundColor: isDark ? const Color(0xFF141A24) : Colors.white,
+                                foregroundColor: isDark ? Colors.white : p.text,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: cyan.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                              ),
+                              onPressed: startRound > 1
+                                  ? () => setDialogState(() => startRound--)
+                                  : null,
+                              icon: const Icon(Icons.remove, size: 20),
+                            ),
+                            const SizedBox(width: 16),
+                            Container(
+                              constraints: const BoxConstraints(minWidth: 70),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF090E17) : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: cyan,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                'RIT $startRound',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: HedgeTokens.cyberFont,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: 1.0,
+                                  color: cyan,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            IconButton.filled(
+                              style: IconButton.styleFrom(
+                                backgroundColor: isDark ? const Color(0xFF141A24) : Colors.white,
+                                foregroundColor: isDark ? Colors.white : p.text,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: cyan.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                              ),
+                              onPressed: startRound < 99
+                                  ? () => setDialogState(() => startRound++)
+                                  : null,
+                              icon: const Icon(Icons.add, size: 20),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Center(
+                          child: Text(
+                            'Putaran: R$startRound s.d. R${startRound + route.config.rounds - 1} (${route.config.rounds} rit)',
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, null),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                    ),
+                  ),
+                ),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: cyan,
+                    foregroundColor: const Color(0xFF070B12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, startRound),
+                  icon: const Icon(Icons.bolt, size: 18),
+                  label: const Text(
+                    'Generate Jadwal',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> generate(HedgeRoute route, {bool replan = false}) async {
-    if (route.schedule != null &&
-        !await confirm(
-          replan ? 'Hitung ulang sisa hari?' : 'Buat revisi jadwal baru?',
-          replan
-              ? 'Rencana yang waktunya sudah lewat dipertahankan. Pengaturan terbaru berlaku setelah menit sekarang. Catatan aktual tetap terpisah.'
-              : 'Jadwal baru menggunakan pengaturan dan armada aktif. Revisi sebelumnya disimpan sebagai histori.',
-        )) {
+    if (replan) {
+      if (!await confirm(
+        'Hitung ulang sisa hari?',
+        'Rencana yang waktunya sudah lewat dipertahankan. Pengaturan terbaru berlaku setelah menit sekarang. Catatan aktual tetap terpisah.',
+      )) {
+        return;
+      }
+      if (await controller.generate(route, replan: true)) {
+        setState(() => roundFilter = null);
+        toast('Revisi jadwal tersimpan.');
+      }
       return;
     }
-    if (await controller.generate(route, replan: replan)) {
+
+    final chosenStartRound = await _promptGenerate(route);
+    if (chosenStartRound == null) return;
+
+    final targetRoute = route.config.startRound == chosenStartRound
+        ? route
+        : route.copyWith(
+            config: route.config.copyWith(startRound: chosenStartRound),
+          );
+
+    if (await controller.generate(targetRoute, replan: false)) {
       setState(() => roundFilter = null);
-      toast('Revisi jadwal tersimpan.');
+      toast('Revisi jadwal tersimpan (mulai Rit $chosenStartRound).');
     }
   }
 
@@ -261,31 +496,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         child: Column(
           children: [
             if (state.saving) const LinearProgressIndicator(minHeight: 2),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => _date(workspace),
-                        icon: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(workspace.date, maxLines: 1),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.offline_bolt,
-                    size: 16,
-                    color: context.hedge.cyanInk,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text('Lokal', style: TextStyle(fontSize: 12)),
-                ],
-              ),
-            ),
+
             if (workspace.routes.isNotEmpty)
               SizedBox(
                 height: 56,
@@ -1333,20 +1544,6 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
       builder: (_) => ConfigurationSheet(route: currentRoute),
     );
     if (result != null) await controller.updateRoute(result);
-  }
-
-  Future<void> _date(Workspace workspace) async {
-    final result = await showDatePicker(
-      context: context,
-      initialDate: DateTime.parse(workspace.date),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (result != null) {
-      await controller.setDate(
-        '${result.year}-${result.month.toString().padLeft(2, '0')}-${result.day.toString().padLeft(2, '0')}',
-      );
-    }
   }
 }
 
