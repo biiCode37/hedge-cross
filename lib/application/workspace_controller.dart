@@ -176,10 +176,32 @@ class WorkspaceController extends Notifier<AppState> {
     );
   }
 
+  Future<bool> setUnitsActive(HedgeRoute route, Set<String> unitIds, bool active) {
+    final order = [
+      ...route.order.where((id) => !unitIds.contains(id)),
+      if (active) ...route.units.where((u) => unitIds.contains(u.id)).map((u) => u.id),
+    ];
+    return updateRoute(
+      route.copyWith(
+        units: route.units
+            .map((u) => unitIds.contains(u.id) ? u.copyWith(active: active) : u)
+            .toList(),
+        order: order,
+      ),
+    );
+  }
+
   Future<bool> deleteUnit(HedgeRoute route, String id) => updateRoute(
     route.copyWith(
       units: route.units.where((u) => u.id != id).toList(),
       order: route.order.where((value) => value != id).toList(),
+    ),
+  );
+
+  Future<bool> deleteUnits(HedgeRoute route, Set<String> unitIds) => updateRoute(
+    route.copyWith(
+      units: route.units.where((u) => !unitIds.contains(u.id)).toList(),
+      order: route.order.where((id) => !unitIds.contains(id)).toList(),
     ),
   );
 

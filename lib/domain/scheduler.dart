@@ -92,6 +92,7 @@ class Scheduler {
       count,
       route.config,
     );
+    final startRound = route.config.startRound;
     final rows = List.generate(
       count,
       (i) => Departure(
@@ -99,7 +100,7 @@ class Scheduler {
         unitId: units[i % units.length].id,
         unitNumber: units[i % units.length].number,
         ordinal: i + 1,
-        round: i ~/ units.length + 1,
+        round: startRound + (i ~/ units.length),
         minute: times[i],
         peak: count > 1 && _peakAt(times[i], route.config),
         nextGap: i + 1 < count ? times[i + 1] - times[i] : null,
@@ -143,11 +144,12 @@ class Scheduler {
     }
     final queue = <({FleetUnit unit, int round})>[];
     final active = route.activeUnits;
+    final startRound = route.config.startRound;
     for (var pass = 1; pass <= route.config.rounds; pass++) {
       for (final u in active) {
         final completed = done[u.id] ?? 0;
         if (completed + pass <= route.config.rounds) {
-          queue.add((unit: u, round: completed + pass));
+          queue.add((unit: u, round: (startRound - 1) + completed + pass));
         }
       }
     }

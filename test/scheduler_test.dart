@@ -252,4 +252,28 @@ void main() {
       expect(() => parseMinute('5:00'), throwsFormatException);
     },
   );
+  test('Flexible startRound generates and replans with custom starting round', () {
+    final route = small(units: 2, rounds: 3).copyWith(
+      config: small(units: 2, rounds: 3).config.copyWith(startRound: 4),
+    );
+    final revision = generate(route);
+    expect(revision.departures.length, 6);
+    expect(revision.departures[0].round, 4);
+    expect(revision.departures[1].round, 4);
+    expect(revision.departures[2].round, 5);
+    expect(revision.departures[3].round, 5);
+    expect(revision.departures[4].round, 6);
+    expect(revision.departures[5].round, 6);
+
+    final withSchedule = route.copyWith(schedule: revision);
+    final replanned = const Scheduler().replan(
+      withSchedule,
+      revisionId: 'replan-r4',
+      now: plannedInstant('2026-10-05', revision.departures[1].minute),
+    );
+    expect(replanned.departures[0].round, 4);
+    expect(replanned.departures[1].round, 4);
+    expect(replanned.departures[2].round, 5);
+    expect(replanned.departures[5].round, 6);
+  });
 }

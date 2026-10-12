@@ -79,6 +79,7 @@ class PlanConfig {
     this.start = '05:00',
     this.end = '22:00',
     this.rounds = 8,
+    this.startRound = 1,
     this.slowFirst = false,
     this.peakEnabled = false,
     this.peaks = const [
@@ -89,13 +90,34 @@ class PlanConfig {
   final String start;
   final String end;
   final int rounds;
+  final int startRound;
   final bool slowFirst;
   final bool peakEnabled;
   final List<PeakPeriod> peaks;
+
+  PlanConfig copyWith({
+    String? start,
+    String? end,
+    int? rounds,
+    int? startRound,
+    bool? slowFirst,
+    bool? peakEnabled,
+    List<PeakPeriod>? peaks,
+  }) => PlanConfig(
+    start: start ?? this.start,
+    end: end ?? this.end,
+    rounds: rounds ?? this.rounds,
+    startRound: startRound ?? this.startRound,
+    slowFirst: slowFirst ?? this.slowFirst,
+    peakEnabled: peakEnabled ?? this.peakEnabled,
+    peaks: peaks ?? this.peaks,
+  );
+
   Map<String, dynamic> toJson() => {
     'start': start,
     'end': end,
     'rounds': rounds,
+    'startRound': startRound,
     'slowFirst': slowFirst,
     'peakEnabled': peakEnabled,
     'peaks': peaks.map((p) => p.toJson()).toList(),
@@ -104,6 +126,7 @@ class PlanConfig {
     start: json['start'] as String,
     end: json['end'] as String,
     rounds: json['rounds'] as int,
+    startRound: json['startRound'] as int? ?? 1,
     slowFirst: json['slowFirst'] as bool? ?? false,
     peakEnabled: json['peakEnabled'] as bool? ?? false,
     peaks: (json['peaks'] as List? ?? [])

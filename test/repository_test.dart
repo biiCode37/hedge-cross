@@ -6,6 +6,7 @@ import 'package:hedge_flutter/application/workspace_controller.dart';
 import 'package:hedge_flutter/data/workspace_repository.dart';
 import 'package:hedge_flutter/data/import_service.dart';
 import 'package:hedge_flutter/data/export_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hedge_flutter/domain/models.dart';
 import 'package:hedge_flutter/domain/scheduler.dart';
 
@@ -161,5 +162,47 @@ void main() {
     expect(bytes.take(2), [80, 75]);
     final pdf = await ExportService.pdf(r);
     expect(utf8.decode(pdf.take(4).toList()), '%PDF');
+  });
+  test('Batch fleet operations setUnitsActive and deleteUnits update atomically', () async {
+    final workspace = sampleWorkspace(DateTime.utc(2026, 10, 5));
+    final container = ProviderContainer(
+      overrides: [
+        initialWorkspaceProvider.overrideWithValue(workspace),
+        repositoryProvider.overrideWithValue(
+          LocalWorkspaceRepository(HedgeDatabase(NativeDatabase.memory())),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(workspaceProvider.notifier);
+    final route = workspace.activeRoute!;
+    expect(route.units.length, greaterThanOrEqualTo(2));
+    final firstTwo = route.units.take(2).map((u) => u.id).toSet();
+
+    // Batch deactivate
+    await controller.setUnitsActive(route, firstTwo, false);
+    var updated = container.read(workspaceProvider).workspace.activeRoute!;
+    for (final id in firstTwo) {
+      expect(updated.units.firstWhere((u) => u.id == id).active, false);
+      expect(updated.order.contains(id), false);
+    }
+
+    // Batch activate
+    await controller.setUnitsActive(updated, firstTwo, true);
+    updated = container.read(workspaceProvider).workspace.activeRoute!;
+    for (final id in firstTwo) {
+      expect(updated.units.firstWhere((u) => u.id == id).active, true);
+      expect(updated.order.contains(id), true);
+    }
+
+    // Batch delete
+    final countBefore = updated.units.length;
+    await controller.deleteUnits(updated, firstTwo);
+    updated = container.read(workspaceProvider).workspace.activeRoute!;
+    expect(updated.units.length, countBefore - firstTwo.length);
+    for (final id in firstTwo) {
+      expect(updated.units.any((u) => u.id == id), false);
+      expect(updated.order.contains(id), false);
+    }
   });
 }
