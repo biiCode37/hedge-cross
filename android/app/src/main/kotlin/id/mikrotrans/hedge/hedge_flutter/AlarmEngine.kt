@@ -56,12 +56,24 @@ object AlarmEngine {
         Intent(c, AlarmReceiver::class.java).setAction("hedge.alarm.TICK"),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     private fun activityIntent(c: Context, key: String, fullScreen: Boolean = true): PendingIntent {
-        val i = Intent(c, if (fullScreen) AlarmActivity::class.java else MainActivity::class.java).setAction("hedge.alarm.OPEN.$key")
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val i = Intent(c, MainActivity::class.java).setAction("hedge.alarm.OPEN.$key")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val options = if (Build.VERSION.SDK_INT >= 35) ActivityOptions.makeBasic().apply {
             setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
         }.toBundle() else null
         return PendingIntent.getActivity(c, 0, i, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE, options)
+    }
+    fun launchApp(c: Context, key: String? = null) {
+        val i = Intent(c, MainActivity::class.java).apply {
+            if (key != null) action = "hedge.alarm.OPEN.$key"
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        val options = if (Build.VERSION.SDK_INT >= 35) ActivityOptions.makeBasic().apply {
+            setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+        }.toBundle() else null
+        try {
+            c.startActivity(i, options)
+        } catch (_: Exception) { /* Fallback to pending notification intent */ }
     }
     private fun rearm(c: Context, s: JSONObject, force: Boolean = false) {
         val now = System.currentTimeMillis()
@@ -155,7 +167,9 @@ object AlarmEngine {
         save(c, s)
         for (item in toShow) show(c, item)
         rearm(c, s, reboot)
-        if (toShow.any { it.event.fullScreen }) openWhenForeground(c)
+        if (toShow.any { it.event.fullScreen } && MainActivity.foreground?.get() == null) {
+            launchApp(c, toShow.firstOrNull { it.event.fullScreen }?.event?.key)
+        }
         AlarmDeliveryService.sync(c)
     }
     private fun show(c: Context, a: ActiveAlarm) {
@@ -189,8 +203,7 @@ object AlarmEngine {
     }
     @Synchronized fun visible(c: Context): List<ActiveAlarm> = AlarmTimeline.visible(current(c), System.currentTimeMillis())
     fun openWhenForeground(c: Context) {
-        // MainActivity (Flutter) handles foreground alarms via ForegroundAlarmOverlay.
-        // Never launch or interrupt MainActivity with the native AlarmActivity.
+        // MainActivity (Flutter) handles all alarms via ForegroundAlarmOverlay.
     }
     @Synchronized fun complete(c: Context, event: AlarmSpec) {
         val s = load(c)

@@ -37,7 +37,6 @@ class AlarmDeliveryService : Service() {
         }
     }
     private val handler = Handler(Looper.getMainLooper())
-    private lateinit var overlay: AlarmOverlay
     private var speech: AlarmSpeechPlayer? = null
     private var preview: ActiveAlarm? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -49,7 +48,6 @@ class AlarmDeliveryService : Service() {
         super.onCreate()
         stopping = false
         running = WeakReference(this)
-        overlay = AlarmOverlay(this)
     }
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -96,7 +94,7 @@ class AlarmDeliveryService : Service() {
         if (events.none { it.event.sound || (it.event.fullScreen && Settings.canDrawOverlays(this)) }) {
             stopping = true
             if (running?.get() === this) running = null
-            overlay.close(); speech?.close(); speech = null
+            speech?.close(); speech = null
             foregroundTypes = -1
             stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return
         }
@@ -107,7 +105,9 @@ class AlarmDeliveryService : Service() {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "HEDGE:activeAlarm").apply { setReferenceCounted(false) }
             wakeLock?.acquire((latestExpiry - now + 1000).coerceIn(1000, 301000)); awakeUntil = latestExpiry
         }
-        overlay.update(AlarmTimeline.visible(alarms, now))
+        if (events.any { it.event.fullScreen } && MainActivity.foreground?.get() == null) {
+            AlarmEngine.launchApp(this, events.firstOrNull { it.event.fullScreen }?.event?.key)
+        }
         if (events.any { it.event.sound }) {
             if (speech == null) speech = AlarmSpeechPlayer(this)
             speech?.update(events)
@@ -118,7 +118,7 @@ class AlarmDeliveryService : Service() {
         stopping = true
         if (running?.get() === this) running = null
         handler.removeCallbacksAndMessages(null)
-        overlay.close(); speech?.close(); speech = null
+        speech?.close(); speech = null
         wakeLock?.let { if (it.isHeld) it.release() }; wakeLock = null
         foregroundTypes = -1
         super.onDestroy()
