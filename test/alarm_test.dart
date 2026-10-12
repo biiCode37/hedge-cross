@@ -309,6 +309,12 @@ void main() {
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('DISPATCH ALARM'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(SwitchListTile, 'Banner notifikasi'),
+      );
+      await tester.pumpAndSettle();
       final scroll = find
           .descendant(
             of: find.byType(ConfigurationSheet),
@@ -317,23 +323,19 @@ void main() {
           .first;
       await tester.scrollUntilVisible(
         find.text('Tutup alert otomatis setelah (detik)'),
-        250,
+        150,
         scrollable: scroll,
       );
+      final stepper = find.ancestor(
+        of: find.text('Tutup alert otomatis setelah (detik)'),
+        matching: find.byType(CockpitDigitalStepper),
+      );
       await tester.enterText(
-        find.ancestor(
-          of: find.text('Tutup alert otomatis setelah (detik)'),
+        find.descendant(
+          of: stepper,
           matching: find.byType(TextFormField),
         ),
         '25',
-      );
-      await tester.scrollUntilVisible(
-        find.text('Banner notifikasi'),
-        -200,
-        scrollable: scroll,
-      );
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, 'Banner notifikasi'),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Simpan pengaturan'));
