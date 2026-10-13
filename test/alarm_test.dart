@@ -236,7 +236,7 @@ void main() {
             ),
             clockProvider.overrideWith((ref) => clock.stream),
           ],
-          child: const HedgeApp(),
+          child: const HedgeApp(bypassAuth: true),
         ),
       );
       clock.add(due);
@@ -268,7 +268,7 @@ void main() {
           initialWorkspaceProvider.overrideWithValue(workspace),
           clockProvider.overrideWith((ref) => clock.stream),
         ],
-        child: const HedgeApp(),
+        child: const HedgeApp(bypassAuth: true),
       ),
     );
     clock.add(due.subtract(const Duration(seconds: 10)));
@@ -374,7 +374,7 @@ void main() {
               ),
               clockProvider.overrideWith((ref) => clock.stream),
             ],
-            child: const HedgeApp(),
+            child: const HedgeApp(bypassAuth: true),
           ),
         );
         clock.add(due.subtract(const Duration(seconds: 10)));

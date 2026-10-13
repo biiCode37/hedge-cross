@@ -1,18 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'application/workspace_controller.dart';
 import 'application/notification_service.dart';
 import 'data/workspace_repository.dart';
+import 'data/catalog_importer.dart';
 import 'ui/app.dart';
 import 'domain/alarm_plan.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    try {
+      await Supabase.initialize(
+        url: 'https://mkffwfvaxuqifflpeaib.supabase.co',
+        publishableKey: 'sb_publishable_g0BlvGNUb-uK98bvgc0gmQ_ahCSH3xD',
+      );
+    } catch (e) {
+      debugPrint('Catatan inisialisasi Supabase (offline fallback aktif): $e');
+    }
+
     final repository = await LocalWorkspaceRepository.open();
     var workspace = await repository.load();
     if (workspace == null) {
-      workspace = sampleWorkspace(DateTime.now());
+      try {
+        workspace = await loadDefaultCatalogWorkspace(DateTime.now());
+      } catch (_) {
+        workspace = sampleWorkspace(DateTime.now());
+      }
       await repository.save(workspace);
     }
     final notifications = NotificationService();

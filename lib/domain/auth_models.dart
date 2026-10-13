@@ -60,6 +60,8 @@ class AuthorizedDispatcher {
   final DateTime? updatedAt;
 
   bool get isAuthorized => status == AccountStatus.active;
+  bool get isBlocked => status == AccountStatus.blocked;
+  bool get isPending => status == AccountStatus.pending;
   bool get isAdmin => role == UserRole.admin || role == UserRole.superadmin;
 
   factory AuthorizedDispatcher.fromJson(Map<String, dynamic> json) {

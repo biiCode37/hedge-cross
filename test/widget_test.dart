@@ -62,7 +62,7 @@ void main() {
                         Stream.value(DateTime.utc(2026, 10, 4, 23, 58, 20)),
                   ),
                 ],
-                child: const HedgeApp(),
+                child: const HedgeApp(bypassAuth: true),
               ),
             ),
           );

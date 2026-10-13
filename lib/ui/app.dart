@@ -23,15 +23,27 @@ import 'permission_gate.dart';
 import 'cockpit_components.dart';
 import '../domain/alarm_plan.dart';
 import '../application/dispatch_focus.dart';
+import 'auth_gate.dart';
 part 'data_actions.dart';
 part 'board.dart';
 
+final bypassAuthProvider = Provider<bool>((ref) => false);
+
 class HedgeApp extends ConsumerWidget {
-  const HedgeApp({super.key, this.notifications});
+  const HedgeApp({
+    super.key,
+    this.notifications,
+    this.bypassAuth = false,
+  });
+
   final NotificationService? notifications;
+  final bool bypassAuth;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(workspaceProvider.select((s) => s.workspace.theme));
+    final shouldBypass = bypassAuth || ref.watch(bypassAuthProvider);
+
     return MaterialApp(
       title: 'HEDGE',
       themeAnimationDuration:
@@ -58,9 +70,12 @@ class HedgeApp extends ConsumerWidget {
           const ForegroundAlarmOverlay(),
         ],
       ),
-      home: PermissionGate(
-        notifications: notifications,
-        child: HomeScreen(notifications: notifications),
+      home: AuthGate(
+        bypassAuth: shouldBypass,
+        child: PermissionGate(
+          notifications: notifications,
+          child: HomeScreen(notifications: notifications),
+        ),
       ),
     );
   }

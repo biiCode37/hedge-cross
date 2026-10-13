@@ -28,7 +28,7 @@ Widget appFor(
   ],
   child: MediaQuery(
     data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-    child: const HedgeApp(),
+    child: const HedgeApp(bypassAuth: true),
   ),
 );
 void main() {
