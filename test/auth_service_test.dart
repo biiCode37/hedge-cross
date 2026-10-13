@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedge_flutter/data/auth_service.dart';
-import 'package:hedge_flutter/domain/auth_models.dart';
 
 class MockSessionStorage implements SessionStorage {
   String? _stored;

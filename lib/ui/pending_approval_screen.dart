@@ -57,7 +57,7 @@ class PendingApprovalScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                align: Alignment.center,
+                alignment: Alignment.center,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
