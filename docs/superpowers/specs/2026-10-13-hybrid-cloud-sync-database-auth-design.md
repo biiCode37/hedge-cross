@@ -204,13 +204,20 @@ Hanya muncul jika akun yang login memiliki role `admin` atau `superadmin`:
 
 ---
 
-## 7. Rencana Integrasi & Dependensi
+## 8. Konfigurasi Proyek Cloud Supabase Resmi (`hedge-cross`)
 
-- **Backend:** Supabase (Auth OAuth Google, PostgreSQL Database, Realtime Listener).
-- **Dependensi Flutter Baru:**
-  - `supabase_flutter` (Klien resmi Supabase & Auth).
-  - `google_sign_in` (Integrasi native Google Sign-In Android).
-  - `flutter_secure_storage` (Penyimpanan aman token sesi di perangkat).
+- **Nama Proyek:** `hedge-cross`
+- **Project ID:** `mkffwfvaxuqifflpeaib`
+- **Project URL:** `https://mkffwfvaxuqifflpeaib.supabase.co`
+- **Region:** `ap-southeast-1` (Singapura)
+- **Status:** `ACTIVE_HEALTHY`
+- **Publishable API Key:** `sb_publishable_g0BlvGNUb-uK98bvgc0gmQ_ahCSH3xD`
+- **Anon Legacy Key:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rZmZ3ZnZheHVxaWZmbHBlYWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4ODg2OTIsImV4cCI6MjEwNzQ2NDY5Mn0.4qp-uyaR-JOfgKqCbuOdl6ez2u0pNAxBAjeDZJl0V5Q`
+- **Data Awal (Seeded):**
+  - `authorized_dispatchers`: 6 akun petugas terdaftar (termasuk superadmin `biicode37@gmail.com` dan `muhammadabyn37@gmail.com`).
+  - `master_routes`: 18 rute resmi Mikrotrans Jakarta Utara (JAK.01 s.d. JAK.120).
+  - `master_units`: 49 unit armada (39 armada JAK.115 + 10 armada JAK.117).
+
 
 
 
