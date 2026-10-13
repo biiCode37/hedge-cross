@@ -109,11 +109,13 @@ class SupabaseAuthService implements AuthService {
     required SessionStorage storage,
     SupabaseClient? client,
     GoogleSignIn? googleSignIn,
+    String? serverClientId = '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
   })  : _storage = storage,
         _client = client,
         _googleSignIn = googleSignIn ??
             GoogleSignIn(
               scopes: const ['email', 'profile'],
+              serverClientId: serverClientId,
             );
 
   final SessionStorage _storage;
