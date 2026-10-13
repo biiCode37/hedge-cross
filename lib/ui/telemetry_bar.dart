@@ -7,13 +7,13 @@ class FleetTelemetryPillBar extends StatelessWidget {
     super.key,
     required this.activeUnits,
     required this.currentRound,
-    required this.totalRounds,
+    required this.maxRound,
     required this.headwayMinutes,
   });
 
   final int activeUnits;
   final int currentRound;
-  final int totalRounds;
+  final int maxRound;
   final int headwayMinutes;
 
   @override
@@ -36,8 +36,8 @@ class FleetTelemetryPillBar extends StatelessWidget {
             const SizedBox(width: 8),
             _Pill(
               icon: Icons.sync_rounded,
-              label: totalRounds > 0
-                  ? 'Ritase $currentRound/$totalRounds'
+              label: maxRound > 0
+                  ? 'Ritase $currentRound/$maxRound'
                   : 'Ritase $currentRound',
               accent: p.muted,
               background: p.raised,

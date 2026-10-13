@@ -276,4 +276,16 @@ void main() {
     expect(replanned.departures[2].round, 5);
     expect(replanned.departures[5].round, 6);
   });
+
+  test('Generating with startRound 2 and 3 rounds spans round 2 to 4', () {
+    final route = small(units: 2, rounds: 3).copyWith(
+      config: small(units: 2, rounds: 3).config.copyWith(startRound: 2),
+    );
+    final revision = generate(route);
+    expect(revision.departures.length, 6);
+    expect(revision.departures.first.round, 2);
+    expect(revision.departures.last.round, 4);
+    final rounds = revision.departures.map((d) => d.round).toSet();
+    expect(rounds, {2, 3, 4});
+  });
 }

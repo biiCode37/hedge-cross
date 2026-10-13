@@ -458,6 +458,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
       final instant = next.value;
       if (instant != null && instant.minute != lastMinute) {
         lastMinute = instant.minute;
+        controller.syncDateIfNeeded(instant);
         unawaited(_syncNativeAlarms());
       }
     });
@@ -657,8 +658,12 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     (focus?.departure.round ??
                         (revision.departures.isNotEmpty
                             ? revision.departures.first.round
-                            : 1)),
-                totalRounds: route.config.rounds,
+                            : route.config.startRound)),
+                maxRound: revision.departures.isNotEmpty
+                    ? revision.departures
+                        .map((d) => d.round)
+                        .reduce((a, b) => a > b ? a : b)
+                    : (route.config.startRound + route.config.rounds - 1),
                 headwayMinutes: focus?.departure.nextGap ??
                     (revision.departures.isNotEmpty
                         ? (revision.departures.first.nextGap ?? 3)
@@ -743,7 +748,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       child: Text(
                         route.dirty
                             ? 'Pengaturan berubah. Jadwal tersimpan belum diperbarui.'
-                            : 'Jadwal bertanggal ${revision!.date}. Tanggal pilihan: ${workspace.date}.',
+                            : 'Jadwal tersimpan bertanggal ${revision!.date} (hari sebelumnya). Silakan buat jadwal baru untuk hari ini (${workspace.date}).',
                         style: TextStyle(fontSize: 12, color: p.amberInk),
                       ),
                     ),

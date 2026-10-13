@@ -33,6 +33,17 @@ class WorkspaceController extends Notifier<AppState> {
   @override
   AppState build() => AppState(ref.read(initialWorkspaceProvider));
 
+  void syncDateIfNeeded(DateTime instant) {
+    final today = serviceDate(instant);
+    if (state.workspace.date != today) {
+      state = AppState(
+        state.workspace.copyWith(date: today),
+        saving: state.saving,
+        error: state.error,
+      );
+    }
+  }
+
   Future<bool> _save(Workspace next) async {
     if (state.saving) return false;
     final previous = state.workspace;
@@ -211,21 +222,31 @@ class WorkspaceController extends Notifier<AppState> {
   Future<bool> generate(HedgeRoute route, {bool replan = false}) async {
     try {
       final now = DateTime.now();
+      final today = serviceDate(now);
       final schedule = replan
           ? _scheduler.replan(route, revisionId: _uuid.v4(), now: now)
           : _scheduler.generate(
               route,
-              date: state.workspace.date,
+              date: today,
               revisionId: _uuid.v4(),
               createdAt: now,
             );
-      return updateRoute(route.copyWith(schedule: schedule));
+      return _save(
+        state.workspace.copyWith(
+          date: today,
+          routes: state.workspace.routes
+              .map((r) => r.id == route.id ? route.copyWith(schedule: schedule) : r)
+              .toList(),
+        ),
+      );
     } catch (error) {
       return _error(error.toString());
     }
   }
 
   Future<List<String>> generateAll() async {
+    final now = DateTime.now();
+    final today = serviceDate(now);
     final failures = <String>[];
     final routes = <HedgeRoute>[];
     for (final route in state.workspace.routes) {
@@ -238,9 +259,9 @@ class WorkspaceController extends Notifier<AppState> {
           route.copyWith(
             schedule: _scheduler.generate(
               route,
-              date: state.workspace.date,
+              date: today,
               revisionId: _uuid.v4(),
-              createdAt: DateTime.now(),
+              createdAt: now,
             ),
           ),
         );
@@ -249,7 +270,7 @@ class WorkspaceController extends Notifier<AppState> {
         failures.add('${route.name}: $error');
       }
     }
-    if (!await _save(state.workspace.copyWith(routes: routes))) {
+    if (!await _save(state.workspace.copyWith(date: today, routes: routes))) {
       failures.add('Perubahan belum tersimpan.');
     }
     return failures;

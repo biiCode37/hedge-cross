@@ -15,7 +15,7 @@ void main() {
               body: FleetTelemetryPillBar(
                 activeUnits: 39,
                 currentRound: 3,
-                totalRounds: 8,
+                maxRound: 8,
                 headwayMinutes: 3,
               ),
             ),
@@ -25,6 +25,28 @@ void main() {
         expect(find.text('Ritase 3/8'), findsOneWidget);
         expect(find.text('Headway 3m'), findsOneWidget);
       }
+    },
+  );
+
+  testWidgets(
+    'FleetTelemetryPillBar displays Ritase 2/4 when starting from round 2 with 3 rounds',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: hedgeTheme(Brightness.dark),
+          home: const Scaffold(
+            body: FleetTelemetryPillBar(
+              activeUnits: 5,
+              currentRound: 2,
+              maxRound: 4, // startRound 2 + rounds 3 - 1 = 4
+              headwayMinutes: 5,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('5 Unit Aktif'), findsOneWidget);
+      expect(find.text('Ritase 2/4'), findsOneWidget);
+      expect(find.text('Headway 5m'), findsOneWidget);
     },
   );
 
@@ -43,7 +65,7 @@ void main() {
             body: FleetTelemetryPillBar(
               activeUnits: 39,
               currentRound: 3,
-              totalRounds: 8,
+              maxRound: 8,
               headwayMinutes: 3,
             ),
           ),

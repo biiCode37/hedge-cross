@@ -25,7 +25,7 @@ DispatchFocus? selectDispatchFocus(
   for (final route in workspace.routes) {
     if (routeId == null ? !route.participates : route.id != routeId) continue;
     final revision = route.schedule;
-    if (revision == null) continue;
+    if (revision == null || revision.date != workspace.date) continue;
     final rows = revision.departures;
     final dayMs = plannedInstant(revision.date, 0).millisecondsSinceEpoch;
     for (var i = 0; i < rows.length; i++) {

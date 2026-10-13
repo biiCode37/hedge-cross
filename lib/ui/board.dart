@@ -41,7 +41,7 @@ class _BoardState extends ConsumerState<BoardScreen> {
         >[];
     for (final route in routes) {
       final revision = route.schedule;
-      if (revision == null) continue;
+      if (revision == null || revision.date != workspace.date) continue;
       for (final row in revision.departures) {
         final at = plannedInstant(revision.date, row.minute);
         if (!workspace.hasDeparted(row.id)) {

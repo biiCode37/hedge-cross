@@ -160,7 +160,7 @@ class LocalWorkspaceRepository implements WorkspaceRepository {
       routes: routes,
       history: history,
       activeRouteId: settings['activeRouteId'],
-      date: settings['date'] ?? serviceDate(DateTime.now()),
+      date: serviceDate(DateTime.now()),
       theme: settings['theme'] ?? 'dark',
       events: events
           .map(

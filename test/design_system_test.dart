@@ -146,6 +146,15 @@ void main() {
         selectDispatchFocus(ack, at, routeId: route.id)!.departure.id,
         row.id,
       );
+
+      // Verifikasi jadwal yang bertanggal berbeda tidak dipilih sebagai fokus aktif
+      final differentDateWorkspace = workspace.copyWith(
+        date: serviceDate(at.add(const Duration(days: 1))),
+      );
+      expect(
+        selectDispatchFocus(differentDateWorkspace, at, routeId: route.id),
+        isNull,
+      );
     },
   );
   test(
