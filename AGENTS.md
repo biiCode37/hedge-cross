@@ -81,3 +81,16 @@ Setiap folder sesi temuan wajib memuat **4 file inti**:
 2. **File Perbaikan yang Dilakukan** (`02-perbaikan-dan-solusi-kode.md`): Penjelasan arsitektur solusi, detail kode yang diperbaiki, dan file-file yang dimodifikasi.
 3. **File Hasil Pengujian** (`03-verifikasi-dan-hasil-pengujian.md`): Catatan command verifikasi, test case baru, hasil unit/widget test Flutter dan native Android.
 4. **File Analogi & Dampak Non-Teknis** (`04-analogi-dan-dampak-non-teknis.md`): Analogi non-teknis dunia nyata yang mudah dipahami, perbandingan situasi sebelum vs sesudah perbaikan, serta dampak langsung bagi dispatcher di lapangan.
+
+---
+
+## 7. Aturan Penggunaan Proyek Supabase HEDGE (`hedge-cross`) (WAJIB)
+
+- **Target Proyek Supabase Eksklusif:**
+  - Saat menggunakan **Supabase MCP tools** (`execute_sql`, `apply_migration`, `list_tables`, `get_publishable_keys`, dsb.) ketika bekerja di repositori ini, agen **WAJIB HANYA MENGGUNAKAN** proyek Supabase **`hedge-cross`**:
+    - **Project Name:** `hedge-cross`
+    - **Project ID:** `mkffwfvaxuqifflpeaib`
+    - **Project URL:** `https://mkffwfvaxuqifflpeaib.supabase.co`
+- **LARANGAN KERAS:**
+  - Agen **DILARANG KERAS** menjalankan migrasi, query DDL, atau operasi data apa pun ke proyek Supabase milik aplikasi lain (seperti `ss-pdo` / `sejttnsanzogsykmtwym` atau proyek lainnya).
+  - Setiap kali memanggil tool Supabase MCP, selalu pastikan parameter `project_id` bernilai `'mkffwfvaxuqifflpeaib'`.
