@@ -1,8 +1,13 @@
 package id.mikrotrans.hedge.hedge_flutter
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 object AlarmSpeechText {
     private val digits = listOf("nol", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan")
     private fun teen(number: Int) = if (number == 11) "sebelas" else "${digits[number % 10]} belas"
+
     fun unit(value: String): String = Regex("[0-9]+").replace(value) { match ->
         val number = match.value
         if (number.length == 1) digits[number[0] - '0'] else {
@@ -24,6 +29,15 @@ object AlarmSpeechText {
             words.joinToString(" ")
         }
     }.replace(Regex("[._/-]+"), " ").replace(Regex("\\s+"), " ").trim()
+
+    fun unitLast4(value: String): String {
+        val matches = Regex("[0-9]+").findAll(value).map { it.value }.toList()
+        if (matches.isEmpty()) return value.replace(Regex("[._/-]+"), " ").trim()
+        val allDigits = matches.joinToString("")
+        val last4 = if (allDigits.length > 4) allDigits.takeLast(4) else allDigits
+        return unit(last4)
+    }
+
     fun route(value: String): String {
         val pattern = Regex("""(?i)\bJAK[.\s](\d{2})(?!\w)""")
         val replaced = pattern.replace(value) { match ->
@@ -39,16 +53,59 @@ object AlarmSpeechText {
         }
         return replaced.replace('.', ' ').replace(Regex("\\s+"), " ").trim()
     }
-    fun message(event: AlarmSpec, now: Long): String? {
-        val route = route(event.routeName)
-        val number = unit(event.unitNumber)
-        if (event.stage == "prep") {
-            if (now >= event.departureAt) return null
-            val seconds = (event.departureAt - now + 999) / 1000
-            return "Segera berangkat, Rute $route, unit $number, berangkat dalam $seconds detik."
-        }
-        return "Rute $route, unit $number, saatnya berangkat."
+
+    fun routeCode(value: String): String {
+        val segment = value.split(Regex("""\s*[—–/:]\s*|\s+-\s+""")).firstOrNull()?.trim() ?: value
+        return route(segment)
     }
+
+    fun format(template: String, event: AlarmSpec, now: Long): String {
+        val defaultTmpl = if (event.stage == "prep") "{rute} unit {unit}, {detik} detik lagi." else "{rute} unit {unit}, saatnya berangkat."
+        val chosenTmpl = if (template.isBlank()) defaultTmpl else template
+
+        val routeSpoken = if (event.isMultiRoute) routeCode(event.routeName) else ""
+        val unitSpoken = unitLast4(event.unitNumber)
+        val remainingSec = ((event.departureAt - now + 999) / 1000).coerceAtLeast(1)
+        val secondsSpoken = "$remainingSec"
+
+        val timeFormatter = SimpleDateFormat("HH:mm", Locale("id", "ID"))
+        val timeFormatted = try { timeFormatter.format(Date(event.departureAt)) } catch (_: Throwable) { "" }
+        val ritaseSpoken = "ritase ${if (event.round in 1..9) digits[event.round] else event.round.toString()}"
+
+        var result = chosenTmpl
+        if (!event.isMultiRoute) {
+            result = result.replace(Regex("""(?i)\brute\s*\{rute\}"""), "")
+                .replace("{rute}", "", ignoreCase = true)
+        } else {
+            result = result.replace("{rute}", routeSpoken, ignoreCase = true)
+        }
+
+        result = result
+            .replace("{unit}", unitSpoken, ignoreCase = true)
+            .replace("{detik}", secondsSpoken, ignoreCase = true)
+            .replace("{jam}", timeFormatted, ignoreCase = true)
+            .replace("{ritase}", ritaseSpoken, ignoreCase = true)
+            .replace(Regex("""\{[^{}]*\}"""), "")
+
+        result = result
+            .replace(Regex("""\s*,\s*"""), ", ")
+            .replace(Regex("""\s*\.\s*"""), ". ")
+            .replace(Regex("""^[,\s.-]+"""), "")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+
+        if (result.isNotEmpty()) {
+            result = result[0].uppercaseChar() + result.substring(1)
+        }
+        return result
+    }
+
+    fun message(event: AlarmSpec, now: Long): String? {
+        if (event.stage == "prep" && now >= event.departureAt) return null
+        val rawTemplate = if (event.stage == "prep") event.prepTemplate else event.dueTemplate
+        return format(rawTemplate, event, now)
+    }
+
     fun next(active: List<ActiveAlarm>, spoken: Set<String>, now: Long): ActiveAlarm? = active
         .filter { it.event.sound && it.expiresAt > now && it.event.key !in spoken && message(it.event, now) != null }
         .sortedWith(compareBy<ActiveAlarm> { if (it.event.stage == "due") 0 else 1 }.thenBy { it.event.at }.thenBy { it.event.key })

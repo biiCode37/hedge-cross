@@ -6,7 +6,12 @@ import org.junit.Test
 class AlarmSpeechTextTest {
     private fun event(stage: String = "due", unit: String = "1865", key: String = stage) = AlarmSpec(
         key, "route", "revision", "departure", "JAK.115", unit, stage, 0, 10000, 1, 20,
-        true, true, true, true, "dark")
+        true, true, true, true, "dark",
+        prepTemplate = "Segera berangkat, Rute {rute}, unit {unit}, berangkat dalam {detik} detik.",
+        dueTemplate = "Rute {rute}, unit {unit}, saatnya berangkat.",
+        isMultiRoute = true
+    )
+
     @Test fun approvedUnitExamples() {
         val expected = mapOf("1865" to "delapan belas enam lima", "2213" to "dua dua tiga belas",
             "1870" to "delapan belas tujuh puluh", "630" to "enam tiga puluh")
@@ -80,5 +85,58 @@ class AlarmSpeechTextTest {
         assertNull(AlarmSpeechText.next(listOf(due.copy(event = due.event.copy(sound = false))), emptySet(), 1))
         assertNull(AlarmSpeechText.next(emptyList(), emptySet(), 1))
         assertNull(AlarmSpeechText.next(listOf(ActiveAlarm(event("prep"), 0)), emptySet(), 10000))
+    }
+
+    @Test fun customTemplateParsingAndPlaceholders() {
+        val eventMulti = AlarmSpec("k", "r", "rev", "d", "JAK.115 — Tanjung Priok", "MJU-01865",
+            "due", 0, 10000, 2, 20, true, true, true, true, "dark",
+            prepTemplate = "{rute} unit {unit}, {detik} detik lagi.",
+            dueTemplate = "{rute} unit {unit}, saatnya berangkat.",
+            isMultiRoute = true)
+        
+        // Multi-route: includes route code
+        assertEquals("JAK 115 unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventMulti, 10000))
+
+        // Single-route: omits route cleanly without leading comma/spaces
+        val eventSingle = eventMulti.copy(
+            isMultiRoute = false,
+            dueTemplate = "{rute}, unit {unit}, jalan!"
+        )
+        assertEquals("Unit delapan belas enam lima, jalan!",
+            AlarmSpeechText.message(eventSingle, 10000))
+    }
+
+    @Test fun unitLast4DigitExtraction() {
+        assertEquals("delapan belas enam lima", AlarmSpeechText.unitLast4("1865"))
+        assertEquals("delapan belas enam lima", AlarmSpeechText.unitLast4("01865"))
+        assertEquals("delapan belas enam lima", AlarmSpeechText.unitLast4("MJU-01865"))
+        assertEquals("dua dua tiga belas", AlarmSpeechText.unitLast4("TS-002213"))
+        assertEquals("tujuh enam", AlarmSpeechText.unitLast4("76"))
+        assertEquals("CAD", AlarmSpeechText.unitLast4("CAD"))
+    }
+
+    @Test fun routeCodeCleaning() {
+        assertEquals("JAK 115", AlarmSpeechText.routeCode("JAK.115 — Tanjung Priok - Pegangsaan"))
+        assertEquals("JAK tujuh enam", AlarmSpeechText.routeCode("JAK.76 — ASMI - Semper"))
+        assertEquals("JAK lima belas", AlarmSpeechText.routeCode("JAK.15"))
+    }
+
+    @Test fun prepRemainingSecondsCalculation() {
+        val eventPrep = AlarmSpec("k", "r", "rev", "d", "JAK.115", "1865",
+            "prep", 0, 10000, 1, 20, true, true, true, true, "dark",
+            prepTemplate = "{rute} unit {unit}, {detik} detik lagi.",
+            isMultiRoute = true)
+        assertEquals("JAK 115 unit delapan belas enam lima, 7 detik lagi.",
+            AlarmSpeechText.message(eventPrep, 3001))
+    }
+
+    @Test fun emptyTemplateFallback() {
+        val eventBlank = AlarmSpec("k", "r", "rev", "d", "JAK.115", "1865",
+            "due", 0, 10000, 1, 20, true, true, true, true, "dark",
+            dueTemplate = "   ", isMultiRoute = false)
+        // Must fallback to default ringkas without crashing
+        assertEquals("Unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventBlank, 10000))
     }
 }

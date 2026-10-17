@@ -5,7 +5,10 @@ data class AlarmSpec(
     val routeName: String, val unitNumber: String, val stage: String,
     val at: Long, val departureAt: Long, val round: Int, val durationSeconds: Int,
     val banner: Boolean, val fullScreen: Boolean, val sound: Boolean,
-    val vibration: Boolean, val theme: String
+    val vibration: Boolean, val theme: String,
+    val prepTemplate: String = "{rute} unit {unit}, {detik} detik lagi.",
+    val dueTemplate: String = "{rute} unit {unit}, saatnya berangkat.",
+    val isMultiRoute: Boolean = false
 )
 data class ActiveAlarm(val event: AlarmSpec, val shownAt: Long) {
     val expiresAt: Long get() = shownAt + event.durationSeconds.coerceIn(1, 300) * 1000L
