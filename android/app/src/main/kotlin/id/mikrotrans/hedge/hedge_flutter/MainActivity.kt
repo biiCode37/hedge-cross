@@ -34,7 +34,16 @@ class MainActivity : FlutterActivity() {
                 try {
                     when (call.method) {
                         "replace" -> result.success(AlarmEngine.replace(this, JSONObject(call.arguments as String)))
-                        "testSpeech" -> { AlarmEngine.deliveryIssue(this, ""); AlarmDeliveryService.sync(this, preview = true); result.success(null) }
+                        "testSpeech" -> {
+                            val args = call.arguments as? Map<*, *>
+                            val prep = args?.get("prepTemplate") as? String
+                            val due = args?.get("dueTemplate") as? String
+                            val stage = args?.get("stage") as? String ?: "due"
+                            val isMulti = args?.get("isMultiRoute") as? Boolean ?: false
+                            AlarmEngine.deliveryIssue(this, "")
+                            AlarmDeliveryService.sync(this, preview = true, prepTemplate = prep, dueTemplate = due, previewStage = stage, isMultiRoute = isMulti)
+                            result.success(null)
+                        }
                         "stopSpeechTest" -> { AlarmDeliveryService.stopPreview(); result.success(null) }
                         "status" -> result.success(AlarmEngine.status(this))
                         "readActions" -> result.success(AlarmEngine.pendingActions(this))

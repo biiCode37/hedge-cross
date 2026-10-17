@@ -19,11 +19,35 @@ class AlarmDeliveryService : Service() {
             service.handler.post { service.refresh() }
             return true
         }
-        fun sync(context: Context, preview: Boolean = false) {
-            if (!preview && refreshIfRunning()) return
+        fun sync(
+            context: Context,
+            preview: Boolean = false,
+            prepTemplate: String? = null,
+            dueTemplate: String? = null,
+            previewStage: String? = null,
+            isMultiRoute: Boolean = false
+        ) {
+            if (preview) {
+                running?.get()?.let {
+                    val now = System.currentTimeMillis()
+                    val stage = previewStage ?: "due"
+                    it.preview = ActiveAlarm(AlarmSpec("preview:$now", "preview", "preview", "preview", "JAK.115", "1865",
+                        stage, now, if (stage == "prep") now + 7000L else now, 1, 20, false, false, true, false, "dark",
+                        prepTemplate = prepTemplate ?: "{rute} unit {unit}, {detik} detik lagi.",
+                        dueTemplate = dueTemplate ?: "{rute} unit {unit}, saatnya berangkat.",
+                        isMultiRoute = isMultiRoute), now)
+                    it.handler.post { it.refresh() }
+                    return
+                }
+            } else if (refreshIfRunning()) return
             val events = AlarmEngine.current(context)
             if (!preview && events.none { it.event.sound || (it.event.fullScreen && Settings.canDrawOverlays(context)) }) return
-            val intent = Intent(context, AlarmDeliveryService::class.java).putExtra("preview", preview)
+            val intent = Intent(context, AlarmDeliveryService::class.java)
+                .putExtra("preview", preview)
+                .putExtra("prepTemplate", prepTemplate)
+                .putExtra("dueTemplate", dueTemplate)
+                .putExtra("previewStage", previewStage)
+                .putExtra("isMultiRoute", isMultiRoute)
             try {
                 if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
             } catch (error: RuntimeException) {
@@ -55,8 +79,15 @@ class AlarmDeliveryService : Service() {
         running = WeakReference(this)
         if (intent?.getBooleanExtra("preview", false) == true) {
             val now = System.currentTimeMillis()
+            val prep = intent.getStringExtra("prepTemplate") ?: "{rute} unit {unit}, {detik} detik lagi."
+            val due = intent.getStringExtra("dueTemplate") ?: "{rute} unit {unit}, saatnya berangkat."
+            val stage = intent.getStringExtra("previewStage") ?: "due"
+            val isMulti = intent.getBooleanExtra("isMultiRoute", false)
             preview = ActiveAlarm(AlarmSpec("preview:$now", "preview", "preview", "preview", "JAK.115", "1865",
-                "due", now, now, 1, 20, false, false, true, false, "dark"), now)
+                stage, now, if (stage == "prep") now + 7000L else now, 1, 20, false, false, true, false, "dark",
+                prepTemplate = prep,
+                dueTemplate = due,
+                isMultiRoute = isMulti), now)
         }
         refresh()
         return START_STICKY

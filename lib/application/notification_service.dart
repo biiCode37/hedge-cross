@@ -158,10 +158,20 @@ class NotificationService {
     }
   }
 
-  Future<void> testSpeech() async {
+  Future<void> testSpeech({
+    String? prepTemplate,
+    String? dueTemplate,
+    String? stage,
+    bool isMultiRoute = false,
+  }) async {
     if (!isAndroid) return;
     try {
-      await channel.invokeMethod<void>('testSpeech');
+      await channel.invokeMethod<void>('testSpeech', {
+        'prepTemplate': prepTemplate,
+        'dueTemplate': dueTemplate,
+        'stage': stage ?? 'due',
+        'isMultiRoute': isMultiRoute,
+      });
       for (var i = 0; i < 4; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 750));
         await refreshStatus();
