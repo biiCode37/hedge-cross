@@ -250,8 +250,11 @@ class AlarmPreferences {
     this.departure = true,
     this.sound = true,
     this.vibration = true,
+    this.prepTemplate = '{rute} unit {unit}, {detik} detik lagi.',
+    this.dueTemplate = '{rute} unit {unit}, saatnya berangkat.',
   });
   final bool banner, fullScreen, preparation, departure, sound, vibration;
+  final String prepTemplate, dueTemplate;
   Map<String, dynamic> toJson() => {
     'banner': banner,
     'fullScreen': fullScreen,
@@ -259,6 +262,8 @@ class AlarmPreferences {
     'departure': departure,
     'sound': sound,
     'vibration': vibration,
+    'prepTemplate': prepTemplate,
+    'dueTemplate': dueTemplate,
   };
   factory AlarmPreferences.fromJson(Map<String, dynamic> json) =>
       AlarmPreferences(
@@ -268,7 +273,28 @@ class AlarmPreferences {
         departure: json['departure'] as bool? ?? true,
         sound: json['sound'] as bool? ?? true,
         vibration: json['vibration'] as bool? ?? true,
+        prepTemplate: json['prepTemplate'] as String? ?? '{rute} unit {unit}, {detik} detik lagi.',
+        dueTemplate: json['dueTemplate'] as String? ?? '{rute} unit {unit}, saatnya berangkat.',
       );
+  AlarmPreferences copyWith({
+    bool? banner,
+    bool? fullScreen,
+    bool? preparation,
+    bool? departure,
+    bool? sound,
+    bool? vibration,
+    String? prepTemplate,
+    String? dueTemplate,
+  }) => AlarmPreferences(
+    banner: banner ?? this.banner,
+    fullScreen: fullScreen ?? this.fullScreen,
+    preparation: preparation ?? this.preparation,
+    departure: departure ?? this.departure,
+    sound: sound ?? this.sound,
+    vibration: vibration ?? this.vibration,
+    prepTemplate: prepTemplate ?? this.prepTemplate,
+    dueTemplate: dueTemplate ?? this.dueTemplate,
+  );
 }
 
 class HedgeRoute {
@@ -315,6 +341,7 @@ class HedgeRoute {
   bool get dirty =>
       schedule != null && schedule!.inputFingerprint != fingerprint;
   HedgeRoute copyWith({
+    String? id,
     String? name,
     int? color,
     List<FleetUnit>? units,
@@ -328,7 +355,7 @@ class HedgeRoute {
     ScheduleRevision? schedule,
     bool clearSchedule = false,
   }) => HedgeRoute(
-    id: id,
+    id: id ?? this.id,
     name: name ?? this.name,
     color: color ?? this.color,
     units: units ?? this.units,

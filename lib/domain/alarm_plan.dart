@@ -15,6 +15,7 @@ class AlarmEvent {
     required this.durationSeconds,
     required this.preferences,
     required this.theme,
+    required this.isMultiRoute,
   });
   final String key,
       routeId,
@@ -27,6 +28,7 @@ class AlarmEvent {
   final DateTime at, departureAt;
   final int round, durationSeconds;
   final AlarmPreferences preferences;
+  final bool isMultiRoute;
   Map<String, dynamic> toJson() => {
     'key': key,
     'routeId': routeId,
@@ -40,12 +42,23 @@ class AlarmEvent {
     'round': round,
     'durationSeconds': durationSeconds,
     'theme': theme,
+    'isMultiRoute': isMultiRoute,
+    'prepTemplate': preferences.prepTemplate,
+    'dueTemplate': preferences.dueTemplate,
     ...preferences.toJson(),
   };
 }
 
 /// Entire future queue. Android persists this and rearms without a Dart process.
 List<AlarmEvent> buildAlarmPlan(Workspace workspace, DateTime now) {
+  final participatingRoutes = workspace.routes.where(
+    (r) =>
+        r.participates &&
+        r.alarmEnabled &&
+        r.schedule != null &&
+        (r.alerts.banner || r.alerts.fullScreen),
+  );
+  final isMultiRoute = participatingRoutes.length > 1;
   final events = <AlarmEvent>[];
   for (final route in workspace.routes) {
     if (!route.participates ||
@@ -77,6 +90,7 @@ List<AlarmEvent> buildAlarmPlan(Workspace workspace, DateTime now) {
             durationSeconds: route.alarmDuration.clamp(1, 300),
             preferences: route.alerts,
             theme: workspace.theme,
+            isMultiRoute: isMultiRoute,
           ),
         );
       }

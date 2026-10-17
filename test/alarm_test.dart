@@ -402,5 +402,43 @@ void main() {
         await tester.pumpWidget(const SizedBox());
       },
     );
+
+    test('AlarmPreferences serialization and multi-route context flag in alarm plan', () {
+      const prefs = AlarmPreferences(
+        prepTemplate: '{rute} unit {unit}, {detik} detik lagi.',
+        dueTemplate: '{rute} unit {unit}, saatnya berangkat.',
+      );
+      final json = prefs.toJson();
+      expect(json['prepTemplate'], '{rute} unit {unit}, {detik} detik lagi.');
+      expect(json['dueTemplate'], '{rute} unit {unit}, saatnya berangkat.');
+
+      final restored = AlarmPreferences.fromJson(json);
+      expect(restored.prepTemplate, prefs.prepTemplate);
+      expect(restored.dueTemplate, prefs.dueTemplate);
+
+      // Single route workspace -> isMultiRoute must be false
+      final singleRouteWorkspace = sampleWorkspace(DateTime.utc(2026, 10, 5));
+      final singlePlan = buildAlarmPlan(
+        singleRouteWorkspace,
+        DateTime.utc(2026, 10, 5, 4, 50),
+      );
+      expect(singlePlan.first.toJson()['isMultiRoute'], false);
+
+      // Multi route workspace -> isMultiRoute must be true
+      final secondRoute = singleRouteWorkspace.routes.first.copyWith(
+        id: 'route-2',
+        name: 'JAK.76',
+      );
+      final multiRouteWorkspace = singleRouteWorkspace.copyWith(
+        routes: [singleRouteWorkspace.routes.first, secondRoute],
+      );
+      final multiPlan = buildAlarmPlan(
+        multiRouteWorkspace,
+        DateTime.utc(2026, 10, 5, 4, 50),
+      );
+      expect(multiPlan.first.toJson()['isMultiRoute'], true);
+      expect(multiPlan.first.toJson()['prepTemplate'], isNotEmpty);
+      expect(multiPlan.first.toJson()['dueTemplate'], isNotEmpty);
+    });
   }
 }
