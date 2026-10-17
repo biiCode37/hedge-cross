@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../application/notification_service.dart';
 import '../domain/models.dart';
 import 'cockpit_components.dart';
 import 'design_system.dart';
@@ -480,7 +481,9 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
   int activeSegment = 0;
 
   late final TextEditingController start, end, rounds, prep, duration;
+  late final TextEditingController prepTemplateController, dueTemplateController;
   late final List<TextEditingController> peakFields;
+  late String selectedPreset;
   late bool peak,
       slow,
       alarm,
@@ -491,6 +494,83 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
       sound,
       vibration;
 
+  String _detectPreset(String pTmpl, String dTmpl) {
+    if (pTmpl == '{rute} unit {unit}, {detik} detik lagi.' &&
+        dTmpl == '{rute} unit {unit}, saatnya berangkat.') {
+      return 'ringkas';
+    }
+    if (pTmpl == '{rute} {unit}, {detik} detik.' &&
+        dTmpl == '{rute} {unit}, jalan!') {
+      return 'super_singkat';
+    }
+    if (pTmpl == 'Segera berangkat, {rute} unit {unit}, berangkat dalam {detik} detik.' &&
+        dTmpl == 'Rute {rute}, unit {unit}, saatnya berangkat.') {
+      return 'standar';
+    }
+    return 'kustom';
+  }
+
+  void _applyPreset(String preset) {
+    setState(() {
+      selectedPreset = preset;
+      if (preset == 'ringkas') {
+        prepTemplateController.text = '{rute} unit {unit}, {detik} detik lagi.';
+        dueTemplateController.text = '{rute} unit {unit}, saatnya berangkat.';
+      } else if (preset == 'super_singkat') {
+        prepTemplateController.text = '{rute} {unit}, {detik} detik.';
+        dueTemplateController.text = '{rute} {unit}, jalan!';
+      } else if (preset == 'standar') {
+        prepTemplateController.text =
+            'Segera berangkat, {rute} unit {unit}, berangkat dalam {detik} detik.';
+        dueTemplateController.text =
+            'Rute {rute}, unit {unit}, saatnya berangkat.';
+      }
+    });
+  }
+
+  void _insertTag(TextEditingController controller, String tag) {
+    final text = controller.text;
+    final selection = controller.selection;
+    final startPos = selection.start >= 0 ? selection.start : text.length;
+    final endPos = selection.end >= 0 ? selection.end : text.length;
+    final newText = text.replaceRange(startPos, endPos, tag);
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: startPos + tag.length),
+    );
+    setState(() => selectedPreset = 'kustom');
+  }
+
+  Widget _insertChip(String label, VoidCallback onTap, Color accentColor, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: accentColor.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: HedgeTokens.cyberFont,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: accentColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -500,6 +580,9 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
     rounds = TextEditingController(text: '${r.config.rounds}');
     prep = TextEditingController(text: '${r.preparationSeconds}');
     duration = TextEditingController(text: '${r.alarmDuration}');
+    prepTemplateController = TextEditingController(text: r.alerts.prepTemplate);
+    dueTemplateController = TextEditingController(text: r.alerts.dueTemplate);
+    selectedPreset = _detectPreset(r.alerts.prepTemplate, r.alerts.dueTemplate);
     peak = r.config.peakEnabled;
     slow = r.config.slowFirst;
     alarm = r.alarmEnabled;
@@ -527,6 +610,8 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
 
   @override
   void dispose() {
+    prepTemplateController.dispose();
+    dueTemplateController.dispose();
     for (final field in [start, end, rounds, prep, duration, ...peakFields]) {
       field.dispose();
     }
@@ -883,6 +968,153 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                                 value: sound,
                                 onChanged: (v) => setState(() => sound = v),
                               ),
+                              if (sound) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF070B12) : const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: cyan.withValues(alpha: isDark ? 0.35 : 0.4),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.record_voice_over_rounded, size: 16, color: cyan),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'FORMAT KALIMAT SUARA TTS',
+                                            style: TextStyle(
+                                              fontFamily: HedgeTokens.cyberFont,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 11,
+                                              letterSpacing: 1.0,
+                                              color: cyan,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      DropdownButtonFormField<String>(
+                                        key: ValueKey(selectedPreset),
+                                        initialValue: selectedPreset,
+                                        isDense: true,
+                                        decoration: InputDecoration(
+                                          labelText: 'Gaya Bicara (Preset)',
+                                          labelStyle: TextStyle(fontSize: 12, color: p.muted),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        items: const [
+                                          DropdownMenuItem(value: 'ringkas', child: Text('Ringkas (Rekomendasi)', style: TextStyle(fontSize: 12))),
+                                          DropdownMenuItem(value: 'super_singkat', child: Text('Super Singkat (Pos Pantau Cepat)', style: TextStyle(fontSize: 12))),
+                                          DropdownMenuItem(value: 'standar', child: Text('Standar Formal', style: TextStyle(fontSize: 12))),
+                                          DropdownMenuItem(value: 'kustom', child: Text('Kustom (Edit Sendiri)', style: TextStyle(fontSize: 12))),
+                                        ],
+                                        onChanged: (val) {
+                                          if (val != null) _applyPreset(val);
+                                        },
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Sebelum Berangkat (Persiapan):',
+                                        style: TextStyle(fontFamily: HedgeTokens.cyberFont, fontSize: 11, fontWeight: FontWeight.w700),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      TextFormField(
+                                        controller: prepTemplateController,
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: InputDecoration(
+                                          isDense: true,
+                                          hintText: '{rute} unit {unit}, {detik} detik lagi.',
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        onChanged: (_) => setState(() => selectedPreset = 'kustom'),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          _insertChip('+ {rute}', () => _insertTag(prepTemplateController, '{rute}'), cyan, isDark),
+                                          _insertChip('+ {unit}', () => _insertTag(prepTemplateController, '{unit}'), cyan, isDark),
+                                          _insertChip('+ {detik}', () => _insertTag(prepTemplateController, '{detik}'), cyan, isDark),
+                                          _insertChip('+ {jam}', () => _insertTag(prepTemplateController, '{jam}'), cyan, isDark),
+                                          _insertChip('+ {ritase}', () => _insertTag(prepTemplateController, '{ritase}'), cyan, isDark),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Saatnya Berangkat (Jatuh Tempo):',
+                                        style: TextStyle(fontFamily: HedgeTokens.cyberFont, fontSize: 11, fontWeight: FontWeight.w700),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      TextFormField(
+                                        controller: dueTemplateController,
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: InputDecoration(
+                                          isDense: true,
+                                          hintText: '{rute} unit {unit}, saatnya berangkat.',
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        onChanged: (_) => setState(() => selectedPreset = 'kustom'),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          _insertChip('+ {rute}', () => _insertTag(dueTemplateController, '{rute}'), cyan, isDark),
+                                          _insertChip('+ {unit}', () => _insertTag(dueTemplateController, '{unit}'), cyan, isDark),
+                                          _insertChip('+ {jam}', () => _insertTag(dueTemplateController, '{jam}'), cyan, isDark),
+                                          _insertChip('+ {ritase}', () => _insertTag(dueTemplateController, '{ritase}'), cyan, isDark),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '💡 Otomatis Cerdas: Jika jadwal hanya memiliki 1 rute aktif, tag {rute} otomatis hening agar tidak bertele-tele di pos pantau tunggal.',
+                                          style: TextStyle(fontSize: 10.5, color: p.muted),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          OutlinedButton.icon(
+                                            onPressed: () {
+                                              NotificationService().testSpeech(
+                                                prepTemplate: prepTemplateController.text,
+                                                dueTemplate: dueTemplateController.text,
+                                                stage: 'due',
+                                                isMultiRoute: false,
+                                              );
+                                            },
+                                            icon: const Icon(Icons.volume_up_rounded, size: 16),
+                                            label: const Text('Uji Suara', style: TextStyle(fontSize: 11)),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () => _applyPreset('ringkas'),
+                                            child: const Text('Reset Default', style: TextStyle(fontSize: 11)),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               SwitchListTile(
                                 contentPadding: EdgeInsets.zero,
                                 title: Text(
@@ -992,6 +1224,12 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                             departure: departure,
                             sound: sound,
                             vibration: vibration,
+                            prepTemplate: prepTemplateController.text.trim().isEmpty
+                                ? '{rute} unit {unit}, {detik} detik lagi.'
+                                : prepTemplateController.text.trim(),
+                            dueTemplate: dueTemplateController.text.trim().isEmpty
+                                ? '{rute} unit {unit}, saatnya berangkat.'
+                                : dueTemplateController.text.trim(),
                           ),
                         ),
                       );
