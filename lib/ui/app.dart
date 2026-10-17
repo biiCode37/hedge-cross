@@ -91,7 +91,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   int destination = 0;
   String fleetQuery = '';
-  final Set<String> selectedFleetIds = <String>{};
+  final List<String> selectedFleetIds = <String>[];
   int? roundFilter;
   int lastMinute = -1;
   @override
@@ -1033,7 +1033,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
               children: [
                 InkWell(
                   onTap: () {
-                    final allSelected = units.every((u) => selectedFleetIds.contains(u.id));
+                    final allSelected = units.isNotEmpty && units.every((u) => selectedFleetIds.contains(u.id));
                     setState(() {
                       if (allSelected) {
                         for (final u in units) {
@@ -1041,7 +1041,9 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                         }
                       } else {
                         for (final u in units) {
-                          selectedFleetIds.add(u.id);
+                          if (!selectedFleetIds.contains(u.id)) {
+                            selectedFleetIds.add(u.id);
+                          }
                         }
                       }
                     });
@@ -1053,7 +1055,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          units.every((u) => selectedFleetIds.contains(u.id))
+                          units.isNotEmpty && units.every((u) => selectedFleetIds.contains(u.id))
                               ? Icons.check_box_rounded
                               : (selectedFleetIds.isEmpty
                                   ? Icons.check_box_outline_blank_rounded
@@ -1063,7 +1065,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          units.every((u) => selectedFleetIds.contains(u.id))
+                          units.isNotEmpty && units.every((u) => selectedFleetIds.contains(u.id))
                               ? 'Batal Pilih'
                               : 'Pilih Semua',
                           style: TextStyle(
@@ -1190,7 +1192,9 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             itemCount: units.length,
             itemBuilder: (_, i) {
               final unit = units[i];
-              final isSelected = selectedFleetIds.contains(unit.id);
+              final selectionIndex = selectedFleetIds.indexOf(unit.id);
+              final isSelected = selectionIndex != -1;
+              final parsed = splitUnitNumber(unit.number);
               return CockpitManifestCard(
                 key: ValueKey('unit-card-${unit.id}'),
                 isAmber: !unit.active,
@@ -1208,7 +1212,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   height: 38,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? cyan.withValues(alpha: 0.2)
+                        ? cyan.withValues(alpha: 0.25)
                         : (isDark ? const Color(0xFF070B12) : p.raised),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
@@ -1220,22 +1224,50 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       width: isSelected ? 1.6 : 1.2,
                     ),
                   ),
-                  child: Icon(
-                    isSelected ? Icons.check_box_rounded : Icons.directions_bus,
-                    size: 20,
-                    color: isSelected ? cyan : (unit.active ? cyan : amber),
-                  ),
+                  alignment: Alignment.center,
+                  child: isSelected
+                      ? Text(
+                          '${selectionIndex + 1}',
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            color: cyan,
+                          ),
+                        )
+                      : Icon(
+                          Icons.directions_bus,
+                          size: 20,
+                          color: unit.active ? cyan : amber,
+                        ),
                 ),
-                title: Text(
-                  'Unit ${unit.number}',
-                  style: TextStyle(
-                    fontFamily: HedgeTokens.cyberFont,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    letterSpacing: 0.5,
-                    color: isDark ? Colors.white : p.text,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (parsed.operator.isNotEmpty)
+                      Text(
+                        parsed.operator,
+                        style: TextStyle(
+                          fontFamily: HedgeTokens.cyberFont,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                          color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                        ),
+                      ),
+                    Text(
+                      parsed.number,
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        letterSpacing: 0.5,
+                        color: isDark ? Colors.white : p.text,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
                 subtitle: Text(
                   unit.active ? 'Aktif untuk jadwal baru' : 'Tidak aktif',

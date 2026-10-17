@@ -187,15 +187,19 @@ class WorkspaceController extends Notifier<AppState> {
     );
   }
 
-  Future<bool> setUnitsActive(HedgeRoute route, Set<String> unitIds, bool active) {
-    final order = [
-      ...route.order.where((id) => !unitIds.contains(id)),
-      if (active) ...route.units.where((u) => unitIds.contains(u.id)).map((u) => u.id),
-    ];
+  Future<bool> setUnitsActive(HedgeRoute route, Iterable<String> unitIds, bool active) {
+    final unitIdSet = unitIds.toSet();
+    final orderedSelection = unitIds.toList();
+    final order = active
+        ? [
+            ...orderedSelection,
+            ...route.order.where((id) => !unitIdSet.contains(id)),
+          ]
+        : route.order.where((id) => !unitIdSet.contains(id)).toList();
     return updateRoute(
       route.copyWith(
         units: route.units
-            .map((u) => unitIds.contains(u.id) ? u.copyWith(active: active) : u)
+            .map((u) => unitIdSet.contains(u.id) ? u.copyWith(active: active) : u)
             .toList(),
         order: order,
       ),
@@ -209,12 +213,15 @@ class WorkspaceController extends Notifier<AppState> {
     ),
   );
 
-  Future<bool> deleteUnits(HedgeRoute route, Set<String> unitIds) => updateRoute(
-    route.copyWith(
-      units: route.units.where((u) => !unitIds.contains(u.id)).toList(),
-      order: route.order.where((id) => !unitIds.contains(id)).toList(),
-    ),
-  );
+  Future<bool> deleteUnits(HedgeRoute route, Iterable<String> unitIds) {
+    final unitIdSet = unitIds.toSet();
+    return updateRoute(
+      route.copyWith(
+        units: route.units.where((u) => !unitIdSet.contains(u.id)).toList(),
+        order: route.order.where((id) => !unitIdSet.contains(id)).toList(),
+      ),
+    );
+  }
 
   Future<bool> reorder(HedgeRoute route, List<String> order) =>
       updateRoute(route.copyWith(order: order));

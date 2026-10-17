@@ -53,6 +53,20 @@ class FleetUnit {
   );
 }
 
+typedef ParsedUnitNumber = ({String operator, String number});
+
+ParsedUnitNumber splitUnitNumber(String raw) {
+  final trimmed = raw.trim();
+  final match = RegExp(r'^([^\d]+)[\s\-_./]*(.*)$').firstMatch(trimmed);
+  if (match != null && match.group(2)!.isNotEmpty) {
+    return (
+      operator: match.group(1)!.replaceAll(RegExp(r'[\s\-_./]+$'), '').toUpperCase(),
+      number: match.group(2)!.trim(),
+    );
+  }
+  return (operator: '', number: trimmed);
+}
+
 class PeakPeriod {
   const PeakPeriod({
     required this.start,
