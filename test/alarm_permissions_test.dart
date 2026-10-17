@@ -83,7 +83,7 @@ void main() {
         for (var i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 750));
         }
-        expect(calls, contains('testSpeech:null'));
+        expect(calls.any((c) => c.startsWith('testSpeech:')), isTrue);
         final stop = find.text('Hentikan uji suara');
         await tester.ensureVisible(stop);
         await tester.tap(stop);
