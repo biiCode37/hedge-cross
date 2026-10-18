@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/workspace_controller.dart';
 import '../domain/models.dart';
 import 'cockpit_components.dart';
+import 'components/searchable_unit_picker.dart';
 import 'design_system.dart';
 
 class DriverMasterSheet extends ConsumerStatefulWidget {
@@ -378,7 +379,7 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
 
     final nameController = TextEditingController(text: existing?.fullName ?? '');
     final callController = TextEditingController(text: existing?.callName ?? '');
-    final unitController = TextEditingController(text: existing?.defaultUnitNumber ?? '');
+    String? selectedUnit = existing?.defaultUnitNumber;
     var status = existing?.status ?? DriverStatus.tetap;
     var shift = existing?.defaultShift ?? 1;
 
@@ -442,15 +443,13 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: unitController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nomor Unit Bawaan (Opsional)',
-                        hintText: 'Contoh: 540',
-                      ),
+                    const SizedBox(height: 12),
+                    SearchableUnitPicker(
+                      selectedUnitNumber: selectedUnit,
+                      availableUnits: route.units,
+                      onUnitSelected: (val) => setDialogState(() => selectedUnit = val),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         const Text('Shift Default:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -498,7 +497,9 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
     if (saved == true) {
       final callName = callController.text.trim();
       final fullName = nameController.text.trim().isNotEmpty ? nameController.text.trim() : callName;
-      final unitNum = unitController.text.trim().isNotEmpty ? unitController.text.trim() : null;
+      final unitNum = selectedUnit != null && selectedUnit!.trim().isNotEmpty
+          ? selectedUnit!.trim()
+          : null;
 
       final controller = ref.read(workspaceProvider.notifier);
       if (existing == null) {
