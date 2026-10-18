@@ -85,6 +85,8 @@ class Scheduler {
     validateRoute(route);
     plannedInstant(date, 0);
     final units = route.activeUnits;
+    final driversById = {for (final d in route.drivers) d.id: d};
+    final shiftCutoff = parseMinute(route.config.shiftChangeTime);
     final count = units.length * route.config.rounds;
     final times = _timeline(
       parseMinute(route.config.start),
@@ -95,16 +97,23 @@ class Scheduler {
     final startRound = route.config.startRound;
     final rows = List.generate(
       count,
-      (i) => Departure(
-        id: '$revisionId:$i',
-        unitId: units[i % units.length].id,
-        unitNumber: units[i % units.length].number,
-        ordinal: i + 1,
-        round: startRound + (i ~/ units.length),
-        minute: times[i],
-        peak: count > 1 && _peakAt(times[i], route.config),
-        nextGap: i + 1 < count ? times[i + 1] - times[i] : null,
-      ),
+      (i) {
+        final assignedUnit = units[i % units.length];
+        final isMorning = times[i] < shiftCutoff;
+        final driverId = isMorning ? assignedUnit.driverShift1Id : assignedUnit.driverShift2Id;
+        final driverName = driversById[driverId]?.callName;
+        return Departure(
+          id: '$revisionId:$i',
+          unitId: assignedUnit.id,
+          unitNumber: assignedUnit.number,
+          ordinal: i + 1,
+          round: startRound + (i ~/ units.length),
+          minute: times[i],
+          peak: count > 1 && _peakAt(times[i], route.config),
+          nextGap: i + 1 < count ? times[i + 1] - times[i] : null,
+          driverName: driverName,
+        );
+      },
     );
     return ScheduleRevision(
       id: revisionId,
@@ -164,17 +173,24 @@ class Scheduler {
     final times = queue.isEmpty
         ? <int>[]
         : _timeline(firstMinute, endMinute, queue.length, route.config);
+    final driversById = {for (final d in route.drivers) d.id: d};
+    final shiftCutoff = parseMinute(route.config.shiftChangeTime);
     final rows = <Departure>[...frozen];
     for (var i = 0; i < queue.length; i++) {
+      final assignedUnit = queue[i].unit;
+      final isMorning = times[i] < shiftCutoff;
+      final driverId = isMorning ? assignedUnit.driverShift1Id : assignedUnit.driverShift2Id;
+      final driverName = driversById[driverId]?.callName;
       rows.add(
         Departure(
           id: '$revisionId:$i',
-          unitId: queue[i].unit.id,
-          unitNumber: queue[i].unit.number,
+          unitId: assignedUnit.id,
+          unitNumber: assignedUnit.number,
           ordinal: frozen.length + i + 1,
           round: queue[i].round,
           minute: times[i],
           peak: _peakAt(times[i], route.config),
+          driverName: driverName,
         ),
       );
     }
