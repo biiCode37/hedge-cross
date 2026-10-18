@@ -90,4 +90,93 @@ void main() {
     expect(updatedRoute.order.first, 'u2');
     expect(updatedRoute.order[1], 'u1');
   });
+
+  testWidgets('Halaman 02 Armada UI Test: Tanpa subtitle Aktif untuk jadwal baru, bar supir tandem & swap', (tester) async {
+    final repo = TestWorkspaceRepository();
+    const d1 = Driver(
+      id: 'd1',
+      routeId: 'r_test',
+      fullName: 'Bambang Hariyanto',
+      callName: 'Bambang',
+      status: DriverStatus.tetap,
+    );
+    const d2 = Driver(
+      id: 'd2',
+      routeId: 'r_test',
+      fullName: 'Rudi Suherman',
+      callName: 'Rudi',
+      status: DriverStatus.tetap,
+    );
+
+    final units = [
+      const FleetUnit(
+        id: 'u1',
+        number: '540',
+        active: true,
+        driverShift1Id: 'd1',
+        driverShift2Id: 'd2',
+      ),
+      const FleetUnit(
+        id: 'u2',
+        number: '541',
+        active: false,
+      ),
+    ];
+
+    final route = HedgeRoute(
+      id: 'r_test',
+      name: 'JAK.01',
+      color: 0xffff9800,
+      units: units,
+      order: ['u1', 'u2'],
+      drivers: const [d1, d2],
+    );
+
+    final workspace = Workspace(
+      routes: [route],
+      activeRouteId: route.id,
+      date: '2026-10-18',
+      theme: 'dark',
+    );
+    repo.stored = workspace;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          repositoryProvider.overrideWithValue(repo),
+          initialWorkspaceProvider.overrideWithValue(workspace),
+          clockProvider.overrideWith((ref) => Stream.value(DateTime.utc(2026, 10, 18, 7, 0))),
+        ],
+        child: const HedgeApp(bypassAuth: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigasi ke Halaman 02 Armada
+    await tester.tap(find.text('Armada'));
+    await tester.pumpAndSettle();
+
+    // 1. Verifikasi teks "Aktif untuk jadwal baru" TIDAK DITEMUKAN sama sekali
+    expect(find.text('Aktif untuk jadwal baru'), findsNothing);
+
+    // 2. Verifikasi slot tandem supir muncul untuk unit u1 (Bambang & Rudi)
+    expect(find.textContaining('Bambang'), findsOneWidget);
+    expect(find.textContaining('Rudi'), findsOneWidget);
+
+    // 3. Verifikasi tombol header "Kelola Pramudi" dan "Rolling Shift"
+    expect(find.text('Kelola Pramudi'), findsOneWidget);
+    expect(find.text('Rolling Shift'), findsOneWidget);
+
+    // 4. Verifikasi tombol swap supir ⇄ bekerja
+    final swapBtn = find.byKey(const ValueKey('swap-drivers-u1'));
+    expect(swapBtn, findsOneWidget);
+    await tester.tap(swapBtn);
+    await tester.pumpAndSettle();
+
+    // Verifikasi state supir di repo telah ditukar
+    final updatedUnit = repo.stored!.routes.first.units.firstWhere((u) => u.id == 'u1');
+    expect(updatedUnit.driverShift1Id, 'd2');
+    expect(updatedUnit.driverShift2Id, 'd1');
+  });
 }
+

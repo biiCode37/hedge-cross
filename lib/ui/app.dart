@@ -21,6 +21,7 @@ import 'alarm_overlay.dart';
 import 'alarm_permissions.dart';
 import 'permission_gate.dart';
 import 'cockpit_components.dart';
+import 'driver_master_sheet.dart';
 import '../domain/alarm_plan.dart';
 import '../application/dispatch_focus.dart';
 import 'auth_gate.dart';
@@ -927,6 +928,130 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _showDriverMasterSheet(HedgeRoute route) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DriverMasterSheet(route: route),
+    );
+  }
+
+  Future<void> _pickDriverForUnit(HedgeRoute route, FleetUnit unit, int shift) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
+    final p = context.hedge;
+
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF0C1017) : p.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      shift == 1 ? '☀️ Pilih Pramudi Pagi' : '🌙 Pilih Pramudi Siang',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : p.text,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Unit ${unit.number}',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: cyan,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                dense: true,
+                leading: const Icon(Icons.person_off_outlined, color: Colors.redAccent, size: 20),
+                title: const Text('Kosongkan', style: TextStyle(fontSize: 13, color: Colors.redAccent)),
+                onTap: () => Navigator.pop(ctx, '__empty__'),
+              ),
+              if (route.drivers.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Text(
+                      'Belum ada master pramudi pada rute ini.\nBuka "Kelola Pramudi" untuk menambah.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: p.muted),
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: route.drivers.length,
+                    itemBuilder: (context, idx) {
+                      final driver = route.drivers[idx];
+                      final isCurrent = shift == 1
+                          ? unit.driverShift1Id == driver.id
+                          : unit.driverShift2Id == driver.id;
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 14,
+                          backgroundColor: cyan.withValues(alpha: 0.2),
+                          child: Text(
+                            driver.callName.isNotEmpty ? driver.callName[0].toUpperCase() : '?',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cyan),
+                          ),
+                        ),
+                        title: Text(
+                          driver.callName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                            color: isCurrent ? cyan : (isDark ? Colors.white : p.text),
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${driver.fullName} · ${driver.status.name.toUpperCase()}',
+                          style: TextStyle(fontSize: 11, color: p.muted),
+                        ),
+                        trailing: isCurrent ? Icon(Icons.check, color: cyan, size: 18) : null,
+                        onTap: () => Navigator.pop(ctx, driver.id),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      final targetId = selected == '__empty__' ? null : selected;
+      if (shift == 1) {
+        await controller.setUnitDrivers(route, unit.id, shift1Id: targetId, shift2Id: unit.driverShift2Id);
+      } else {
+        await controller.setUnitDrivers(route, unit.id, shift1Id: unit.driverShift1Id, shift2Id: targetId);
+      }
+    }
+  }
+
   Widget _fleet(HedgeRoute route) {
     final units = route.units
         .where((u) => u.number.toLowerCase().contains(fleetQuery.toLowerCase()))
@@ -935,6 +1060,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
     final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
     final p = context.hedge;
+    final driversMap = {for (final d in route.drivers) d.id: d};
 
     return Column(
       children: [
@@ -1022,6 +1148,39 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: cyan,
+                  side: BorderSide(color: cyan.withValues(alpha: isDark ? 0.6 : 0.8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                onPressed: () => _showDriverMasterSheet(route),
+                icon: const Icon(Icons.badge_outlined, size: 13),
+                label: const Text('Kelola Pramudi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: amber,
+                  side: BorderSide(color: amber.withValues(alpha: isDark ? 0.6 : 0.8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                onPressed: () async {
+                  if (await confirm(
+                    'Rolling Shift Rute?',
+                    'Tukar supir pagi ⇄ siang untuk semua unit aktif pada rute ${route.name}?',
+                  )) {
+                    await controller.rollAllDrivers(route);
+                    toast('Jadwal shift seluruh unit aktif berhasil di-rolling.');
+                  }
+                },
+                icon: const Icon(Icons.sync_alt, size: 13),
+                label: const Text('Rolling Shift', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -1192,6 +1351,8 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             itemCount: units.length,
             itemBuilder: (_, i) {
               final unit = units[i];
+              final d1 = unit.driverShift1Id != null ? driversMap[unit.driverShift1Id] : null;
+              final d2 = unit.driverShift2Id != null ? driversMap[unit.driverShift2Id] : null;
               final selectionIndex = selectedFleetIds.indexOf(unit.id);
               final isSelected = selectionIndex != -1;
               final parsed = splitUnitNumber(unit.number);
@@ -1269,16 +1430,99 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ],
                 ),
-                subtitle: Text(
-                  unit.active ? 'Aktif untuk jadwal baru' : 'Tidak aktif',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: HedgeTokens.cyberFont,
-                    fontSize: 11.5,
-                    color: unit.active
-                        ? (isDark ? const Color(0xFF94A3B8) : p.muted)
-                        : (isDark ? amber.withValues(alpha: 0.8) : p.amberInk),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      // Shift 1 (Pagi)
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _pickDriverForUnit(route, unit, 1),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF070B12) : p.raised,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: (isDark ? cyan : p.cyanInk).withValues(alpha: 0.35),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text('☀️ ', style: TextStyle(fontSize: 10)),
+                                Expanded(
+                                  child: Text(
+                                    d1?.callName ?? 'Pagi: -',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: HedgeTokens.cyberFont,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: d1 != null
+                                          ? (isDark ? Colors.white : p.text)
+                                          : (isDark ? const Color(0xFF64748B) : p.muted),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Swap button
+                      IconButton(
+                        key: ValueKey('swap-drivers-${unit.id}'),
+                        tooltip: 'Tukar supir pagi ⇄ siang',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                        icon: Icon(
+                          Icons.swap_horiz,
+                          size: 16,
+                          color: isDark ? cyan : p.cyanInk,
+                        ),
+                        onPressed: () => controller.swapUnitDrivers(route, unit.id),
+                      ),
+                      // Shift 2 (Siang)
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _pickDriverForUnit(route, unit, 2),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF070B12) : p.raised,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: (isDark ? amber : p.amberInk).withValues(alpha: 0.35),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text('🌙 ', style: TextStyle(fontSize: 10)),
+                                Expanded(
+                                  child: Text(
+                                    d2?.callName ?? 'Siang: -',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: HedgeTokens.cyberFont,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: d2 != null
+                                          ? (isDark ? Colors.white : p.text)
+                                          : (isDark ? const Color(0xFF64748B) : p.muted),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 trailing: Row(
