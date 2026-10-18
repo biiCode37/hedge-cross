@@ -1129,60 +1129,104 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              const CockpitStatusBadge(
-                label: 'FLEET MANIFEST',
-                isAmber: false,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${route.activeUnits.length} aktif / ${route.units.length} unit',
-                  style: TextStyle(
-                    fontFamily: HedgeTokens.cyberFont,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                    color: isDark ? const Color(0xFFCBD5E1) : p.text,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 500;
+              final buttons = [
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: cyan,
+                    side: BorderSide(color: cyan.withValues(alpha: isDark ? 0.6 : 0.8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  onPressed: () => _showDriverMasterSheet(route),
+                  icon: const Icon(Icons.badge_outlined, size: 13),
+                  label: const Text('Kelola Pramudi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
-              ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: cyan,
-                  side: BorderSide(color: cyan.withValues(alpha: isDark ? 0.6 : 0.8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: amber,
+                    side: BorderSide(color: amber.withValues(alpha: isDark ? 0.6 : 0.8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  onPressed: () async {
+                    if (await confirm(
+                      'Rolling Shift Rute?',
+                      'Tukar supir pagi ⇄ siang untuk semua unit aktif pada rute ${route.name}?',
+                    )) {
+                      await controller.rollAllDrivers(route);
+                      toast('Jadwal shift seluruh unit aktif berhasil di-rolling.');
+                    }
+                  },
+                  icon: const Icon(Icons.sync_alt, size: 13),
+                  label: const Text('Rolling Shift', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
-                onPressed: () => _showDriverMasterSheet(route),
-                icon: const Icon(Icons.badge_outlined, size: 13),
-                label: const Text('Kelola Pramudi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 6),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: amber,
-                  side: BorderSide(color: amber.withValues(alpha: isDark ? 0.6 : 0.8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-                onPressed: () async {
-                  if (await confirm(
-                    'Rolling Shift Rute?',
-                    'Tukar supir pagi ⇄ siang untuk semua unit aktif pada rute ${route.name}?',
-                  )) {
-                    await controller.rollAllDrivers(route);
-                    toast('Jadwal shift seluruh unit aktif berhasil di-rolling.');
-                  }
-                },
-                icon: const Icon(Icons.sync_alt, size: 13),
-                label: const Text('Rolling Shift', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ],
+              ];
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const CockpitStatusBadge(
+                          label: 'FLEET MANIFEST',
+                          isAmber: false,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${route.activeUnits.length} aktif / ${route.units.length} unit',
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              letterSpacing: 0.5,
+                              color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: buttons),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  const CockpitStatusBadge(
+                    label: 'FLEET MANIFEST',
+                    isAmber: false,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${route.activeUnits.length} aktif / ${route.units.length} unit',
+                      style: TextStyle(
+                        fontFamily: HedgeTokens.cyberFont,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                        color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  ...buttons,
+                ],
+              );
+            },
           ),
         ),
         if (units.isNotEmpty)
@@ -1430,8 +1474,8 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ],
                 ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                bottom: Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: Row(
                     children: [
                       // Shift 1 (Pagi)

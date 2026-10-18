@@ -268,6 +268,7 @@ class CockpitManifestCard extends StatelessWidget {
   final Widget? leading;
   final Widget title;
   final Widget? subtitle;
+  final Widget? bottom;
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool isAmber;
@@ -278,10 +279,11 @@ class CockpitManifestCard extends StatelessWidget {
     this.leading,
     required this.title,
     this.subtitle,
+    this.bottom,
     this.trailing,
     this.onTap,
     this.isAmber = false,
-    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
   });
 
   @override
@@ -310,28 +312,38 @@ class CockpitManifestCard extends StatelessWidget {
             ),
             child: Padding(
               padding: padding,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        title,
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 3),
-                          subtitle!,
-                        ],
+                  Row(
+                    children: [
+                      if (leading != null) ...[
+                        leading!,
+                        const SizedBox(width: 12),
                       ],
-                    ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            title,
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 3),
+                              subtitle!,
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (trailing != null) ...[
+                        const SizedBox(width: 8),
+                        trailing!,
+                      ],
+                    ],
                   ),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 8),
-                    trailing!,
+                  if (bottom != null) ...[
+                    const SizedBox(height: 6),
+                    bottom!,
                   ],
                 ],
               ),
