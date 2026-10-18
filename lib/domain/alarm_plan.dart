@@ -16,6 +16,7 @@ class AlarmEvent {
     required this.preferences,
     required this.theme,
     required this.isMultiRoute,
+    this.driverName = '',
   });
   final String key,
       routeId,
@@ -24,7 +25,8 @@ class AlarmEvent {
       routeName,
       unitNumber,
       stage,
-      theme;
+      theme,
+      driverName;
   final DateTime at, departureAt;
   final int round, durationSeconds;
   final AlarmPreferences preferences;
@@ -43,6 +45,7 @@ class AlarmEvent {
     'durationSeconds': durationSeconds,
     'theme': theme,
     'isMultiRoute': isMultiRoute,
+    'driverName': driverName,
     'prepTemplate': preferences.prepTemplate,
     'dueTemplate': preferences.dueTemplate,
     ...preferences.toJson(),
@@ -91,6 +94,7 @@ List<AlarmEvent> buildAlarmPlan(Workspace workspace, DateTime now) {
             preferences: route.alerts,
             theme: workspace.theme,
             isMultiRoute: isMultiRoute,
+            driverName: row.driverName ?? '',
           ),
         );
       }

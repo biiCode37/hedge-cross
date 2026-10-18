@@ -34,22 +34,117 @@ Map<String, dynamic> jsonMap(Object? value) {
   return Map<String, dynamic>.from(value);
 }
 
+enum DriverStatus { tetap, cadangan }
+
+class Driver {
+  const Driver({
+    required this.id,
+    required this.routeId,
+    required this.fullName,
+    required this.callName,
+    this.status = DriverStatus.tetap,
+    this.defaultUnitNumber,
+    this.defaultShift,
+    this.active = true,
+  });
+
+  final String id;
+  final String routeId;
+  final String fullName;
+  final String callName;
+  final DriverStatus status;
+  final String? defaultUnitNumber;
+  final int? defaultShift;
+  final bool active;
+
+  Driver copyWith({
+    String? id,
+    String? routeId,
+    String? fullName,
+    String? callName,
+    DriverStatus? status,
+    String? defaultUnitNumber,
+    int? defaultShift,
+    bool? active,
+    bool clearUnit = false,
+    bool clearShift = false,
+  }) => Driver(
+    id: id ?? this.id,
+    routeId: routeId ?? this.routeId,
+    fullName: fullName ?? this.fullName,
+    callName: callName ?? this.callName,
+    status: status ?? this.status,
+    defaultUnitNumber: clearUnit ? null : defaultUnitNumber ?? this.defaultUnitNumber,
+    defaultShift: clearShift ? null : defaultShift ?? this.defaultShift,
+    active: active ?? this.active,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'routeId': routeId,
+    'fullName': fullName,
+    'callName': callName,
+    'status': status.name,
+    'defaultUnitNumber': defaultUnitNumber,
+    'defaultShift': defaultShift,
+    'active': active,
+  };
+
+  factory Driver.fromJson(Map<String, dynamic> json) => Driver(
+    id: json['id'] as String,
+    routeId: json['routeId'] as String? ?? '',
+    fullName: json['fullName'] as String? ?? '',
+    callName: json['callName'] as String? ?? '',
+    status: json['status'] == 'cadangan' ? DriverStatus.cadangan : DriverStatus.tetap,
+    defaultUnitNumber: json['defaultUnitNumber'] as String?,
+    defaultShift: json['defaultShift'] as int?,
+    active: json['active'] as bool? ?? true,
+  );
+}
+
 class FleetUnit {
-  const FleetUnit({required this.id, required this.number, this.active = true});
+  const FleetUnit({
+    required this.id,
+    required this.number,
+    this.active = true,
+    this.driverShift1Id,
+    this.driverShift2Id,
+  });
   final String id;
   final String number;
   final bool active;
-  FleetUnit copyWith({bool? active}) =>
-      FleetUnit(id: id, number: number, active: active ?? this.active);
+  final String? driverShift1Id;
+  final String? driverShift2Id;
+
+  FleetUnit copyWith({
+    bool? active,
+    String? driverShift1Id,
+    String? driverShift2Id,
+    bool clearShift1 = false,
+    bool clearShift2 = false,
+  }) =>
+      FleetUnit(
+        id: id,
+        number: number,
+        active: active ?? this.active,
+        driverShift1Id: clearShift1 ? null : driverShift1Id ?? this.driverShift1Id,
+        driverShift2Id: clearShift2 ? null : driverShift2Id ?? this.driverShift2Id,
+      );
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'number': number,
     'active': active,
+    if (driverShift1Id != null) 'driverShift1Id': driverShift1Id,
+    if (driverShift2Id != null) 'driverShift2Id': driverShift2Id,
   };
+
   factory FleetUnit.fromJson(Map<String, dynamic> json) => FleetUnit(
     id: json['id'] as String,
     number: json['number'] as String,
     active: json['active'] as bool? ?? true,
+    driverShift1Id: json['driverShift1Id'] as String?,
+    driverShift2Id: json['driverShift2Id'] as String?,
   );
 }
 
@@ -92,6 +187,7 @@ class PlanConfig {
   const PlanConfig({
     this.start = '05:00',
     this.end = '22:00',
+    this.shiftChangeTime = '13:00',
     this.rounds = 8,
     this.startRound = 1,
     this.slowFirst = false,
@@ -103,6 +199,7 @@ class PlanConfig {
   });
   final String start;
   final String end;
+  final String shiftChangeTime;
   final int rounds;
   final int startRound;
   final bool slowFirst;
@@ -112,6 +209,7 @@ class PlanConfig {
   PlanConfig copyWith({
     String? start,
     String? end,
+    String? shiftChangeTime,
     int? rounds,
     int? startRound,
     bool? slowFirst,
@@ -120,6 +218,7 @@ class PlanConfig {
   }) => PlanConfig(
     start: start ?? this.start,
     end: end ?? this.end,
+    shiftChangeTime: shiftChangeTime ?? this.shiftChangeTime,
     rounds: rounds ?? this.rounds,
     startRound: startRound ?? this.startRound,
     slowFirst: slowFirst ?? this.slowFirst,
@@ -130,6 +229,7 @@ class PlanConfig {
   Map<String, dynamic> toJson() => {
     'start': start,
     'end': end,
+    'shiftChangeTime': shiftChangeTime,
     'rounds': rounds,
     'startRound': startRound,
     'slowFirst': slowFirst,
@@ -139,6 +239,7 @@ class PlanConfig {
   factory PlanConfig.fromJson(Map<String, dynamic> json) => PlanConfig(
     start: json['start'] as String,
     end: json['end'] as String,
+    shiftChangeTime: json['shiftChangeTime'] as String? ?? '13:00',
     rounds: json['rounds'] as int,
     startRound: json['startRound'] as int? ?? 1,
     slowFirst: json['slowFirst'] as bool? ?? false,
@@ -159,6 +260,7 @@ class Departure {
     required this.minute,
     required this.peak,
     this.nextGap,
+    this.driverName,
   });
   final String id;
   final String unitId;
@@ -168,6 +270,7 @@ class Departure {
   final int minute;
   final bool peak;
   final int? nextGap;
+  final String? driverName;
   Departure withGap(int? gap) => Departure(
     id: id,
     unitId: unitId,
@@ -177,6 +280,7 @@ class Departure {
     minute: minute,
     peak: peak,
     nextGap: gap,
+    driverName: driverName,
   );
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -187,6 +291,7 @@ class Departure {
     'minute': minute,
     'peak': peak,
     'nextGap': nextGap,
+    if (driverName != null) 'driverName': driverName,
   };
   factory Departure.fromJson(Map<String, dynamic> json) => Departure(
     id: json['id'] as String,
@@ -197,6 +302,7 @@ class Departure {
     minute: json['minute'] as int,
     peak: json['peak'] as bool,
     nextGap: json['nextGap'] as int?,
+    driverName: json['driverName'] as String?,
   );
 }
 
@@ -264,8 +370,8 @@ class AlarmPreferences {
     this.departure = true,
     this.sound = true,
     this.vibration = true,
-    this.prepTemplate = '{rute} unit {unit}, {detik} detik lagi.',
-    this.dueTemplate = '{rute} unit {unit}, saatnya berangkat.',
+    this.prepTemplate = '{rute} unit {unit}, {pramudi}, {detik} detik lagi.',
+    this.dueTemplate = '{rute} unit {unit}, {pramudi}, saatnya berangkat.',
   });
   final bool banner, fullScreen, preparation, departure, sound, vibration;
   final String prepTemplate, dueTemplate;
@@ -287,8 +393,8 @@ class AlarmPreferences {
         departure: json['departure'] as bool? ?? true,
         sound: json['sound'] as bool? ?? true,
         vibration: json['vibration'] as bool? ?? true,
-        prepTemplate: json['prepTemplate'] as String? ?? '{rute} unit {unit}, {detik} detik lagi.',
-        dueTemplate: json['dueTemplate'] as String? ?? '{rute} unit {unit}, saatnya berangkat.',
+        prepTemplate: json['prepTemplate'] as String? ?? '{rute} unit {unit}, {pramudi}, {detik} detik lagi.',
+        dueTemplate: json['dueTemplate'] as String? ?? '{rute} unit {unit}, {pramudi}, saatnya berangkat.',
       );
   AlarmPreferences copyWith({
     bool? banner,
@@ -318,6 +424,7 @@ class HedgeRoute {
     required this.color,
     required List<FleetUnit> units,
     required List<String> order,
+    List<Driver> drivers = const [],
     this.config = const PlanConfig(),
     this.participates = true,
     this.alarmEnabled = true,
@@ -326,12 +433,14 @@ class HedgeRoute {
     this.alerts = const AlarmPreferences(),
     this.schedule,
   }) : units = List.unmodifiable(units),
-       order = List.unmodifiable(order);
+       order = List.unmodifiable(order),
+       drivers = List.unmodifiable(drivers);
   final String id;
   final String name;
   final int color;
   final List<FleetUnit> units;
   final List<String> order;
+  final List<Driver> drivers;
   final PlanConfig config;
   final bool participates;
   final bool alarmEnabled;
@@ -360,6 +469,7 @@ class HedgeRoute {
     int? color,
     List<FleetUnit>? units,
     List<String>? order,
+    List<Driver>? drivers,
     PlanConfig? config,
     bool? participates,
     bool? alarmEnabled,
@@ -374,6 +484,7 @@ class HedgeRoute {
     color: color ?? this.color,
     units: units ?? this.units,
     order: order ?? this.order,
+    drivers: drivers ?? this.drivers,
     config: config ?? this.config,
     participates: participates ?? this.participates,
     alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -388,6 +499,7 @@ class HedgeRoute {
     'color': color,
     'units': units.map((u) => u.toJson()).toList(),
     'order': order,
+    'drivers': drivers.map((d) => d.toJson()).toList(),
     'config': config.toJson(),
     'participates': participates,
     'alarmEnabled': alarmEnabled,
@@ -404,6 +516,9 @@ class HedgeRoute {
         .map((u) => FleetUnit.fromJson(jsonMap(u)))
         .toList(),
     order: List<String>.from(json['order'] as List),
+    drivers: (json['drivers'] as List? ?? [])
+        .map((d) => Driver.fromJson(jsonMap(d)))
+        .toList(),
     config: PlanConfig.fromJson(jsonMap(json['config'])),
     participates: json['participates'] as bool? ?? true,
     alarmEnabled: json['alarmEnabled'] as bool? ?? true,
