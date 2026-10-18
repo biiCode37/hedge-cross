@@ -417,6 +417,20 @@ class AlarmPreferences {
   );
 }
 
+typedef ParsedRouteName = ({String code, String trajectory});
+
+ParsedRouteName splitRouteName(String raw) {
+  final trimmed = raw.trim();
+  final match = RegExp(r'^([A-Za-z0-9_.]+)\s*[-–—:]\s*(.+)$').firstMatch(trimmed);
+  if (match != null && match.group(1) != null && match.group(2) != null) {
+    return (
+      code: match.group(1)!.trim(),
+      trajectory: match.group(2)!.trim(),
+    );
+  }
+  return (code: trimmed, trajectory: '');
+}
+
 class HedgeRoute {
   HedgeRoute({
     required this.id,
@@ -448,6 +462,10 @@ class HedgeRoute {
   final int preparationSeconds;
   final AlarmPreferences alerts;
   final ScheduleRevision? schedule;
+
+  String get code => splitRouteName(name).code;
+  String get trajectory => splitRouteName(name).trajectory;
+
   List<FleetUnit> get activeUnits {
     final byId = {for (final u in units) u.id: u};
     return order
