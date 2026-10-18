@@ -84,13 +84,16 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                             isAmber: false,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            currentRoute.name,
-                            style: TextStyle(
-                              fontFamily: HedgeTokens.cyberFont,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              color: cyan,
+                          Flexible(
+                            child: Text(
+                              currentRoute.code,
+                              style: TextStyle(
+                                fontFamily: HedgeTokens.cyberFont,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                                color: cyan,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -126,55 +129,55 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
           // Search & Filter
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextField(
-                    style: TextStyle(
-                      fontFamily: HedgeTokens.cyberFont,
-                      fontSize: 13,
-                      color: isDark ? Colors.white : p.text,
-                    ),
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, size: 18, color: cyan),
-                      hintText: 'Cari nama supir...',
-                      hintStyle: TextStyle(
-                        fontFamily: HedgeTokens.cyberFont,
-                        fontSize: 12,
-                        color: isDark ? const Color(0xFF64748B) : p.muted,
-                      ),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF070B12) : p.raised,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: cyan.withValues(alpha: isDark ? 0.25 : 0.3),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: cyan, width: 1.2),
-                      ),
-                    ),
-                    onChanged: (v) => setState(() => _searchQuery = v),
+                TextField(
+                  style: TextStyle(
+                    fontFamily: HedgeTokens.cyberFont,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : p.text,
                   ),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, size: 18, color: cyan),
+                    hintText: 'Cari nama supir...',
+                    hintStyle: TextStyle(
+                      fontFamily: HedgeTokens.cyberFont,
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF64748B) : p.muted,
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF070B12) : p.raised,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: cyan.withValues(alpha: isDark ? 0.25 : 0.3),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: cyan, width: 1.2),
+                    ),
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
                 ),
-                const SizedBox(width: 8),
-                // Filter Segment
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'semua', label: Text('Semua', style: TextStyle(fontSize: 11))),
-                    ButtonSegment(value: 'tetap', label: Text('Tetap', style: TextStyle(fontSize: 11))),
-                    ButtonSegment(value: 'cadangan', label: Text('Cadangan', style: TextStyle(fontSize: 11))),
-                  ],
-                  selected: {_filter},
-                  onSelectionChanged: (s) => setState(() => _filter = s.first),
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 4)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'semua', label: Text('Semua', style: TextStyle(fontSize: 11))),
+                      ButtonSegment(value: 'tetap', label: Text('Tetap', style: TextStyle(fontSize: 11))),
+                      ButtonSegment(value: 'cadangan', label: Text('Cadangan', style: TextStyle(fontSize: 11))),
+                    ],
+                    selected: {_filter},
+                    onSelectionChanged: (s) => setState(() => _filter = s.first),
+                    style: ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
                 ),
               ],

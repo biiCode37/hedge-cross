@@ -2054,7 +2054,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${item.route.name} · Unit ${item.row.unitNumber}\nWaktu berangkat ${formatMinute(item.row.minute)}',
+                      '${item.route.code} · Unit ${item.row.unitNumber}\nWaktu berangkat ${formatMinute(item.row.minute)}',
                     ),
                   ),
                   TextButton(

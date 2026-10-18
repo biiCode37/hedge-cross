@@ -379,7 +379,7 @@ class _ForegroundAlarmOverlayState
                                   child: _TelemetryCard(
                                     icon: Icons.directions_bus_rounded,
                                     label: 'RUTE',
-                                    value: route.name,
+                                    value: route.code,
                                     accentColor: accentColor,
                                     isDark: isDark,
                                   ),

@@ -376,7 +376,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
                           child: Text(
-                            route.name,
+                            route.code,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,

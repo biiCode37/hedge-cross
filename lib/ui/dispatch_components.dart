@@ -156,7 +156,7 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
                       ),
                     ),
                     Text(
-                      '${widget.focus.route.name} · R${widget.focus.departure.round}',
+                      '${widget.focus.route.code} · R${widget.focus.departure.round}',
                       style: TextStyle(
                         fontFamily: HedgeTokens.cyberFont,
                         fontSize: 12,
