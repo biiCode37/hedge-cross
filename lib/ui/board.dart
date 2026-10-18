@@ -522,30 +522,57 @@ class CyberBoardTimelineTile extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
 
-                          // Nomor Unit Raksasa
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              departure.unitNumber,
-                              style: TextStyle(
-                                fontFamily: HedgeTokens.cyberFont,
-                                fontSize: 26,
-                                height: 1.1,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                                color: isDark ? Colors.white : p.text,
-                                fontFeatures: HedgeTokens.numberFeatures,
-                                shadows: (isFocused && isDark)
-                                    ? [
-                                        Shadow(
-                                          color: p.cyanInk.withValues(alpha: 0.5),
-                                          blurRadius: 10,
-                                        ),
-                                      ]
-                                    : null,
+                          // Nomor Unit Raksasa & Nama Pramudi
+                          Row(
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  departure.unitNumber,
+                                  style: TextStyle(
+                                    fontFamily: HedgeTokens.cyberFont,
+                                    fontSize: 26,
+                                    height: 1.1,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    color: isDark ? Colors.white : p.text,
+                                    fontFeatures: HedgeTokens.numberFeatures,
+                                    shadows: (isFocused && isDark)
+                                        ? [
+                                            Shadow(
+                                              color: p.cyanInk.withValues(alpha: 0.5),
+                                              blurRadius: 10,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (departure.driverName != null && departure.driverName!.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF0F172A) : p.raised,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: p.cyanInk.withValues(alpha: 0.4),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    departure.driverName!,
+                                    style: TextStyle(
+                                      fontFamily: HedgeTokens.cyberFont,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : p.text,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),

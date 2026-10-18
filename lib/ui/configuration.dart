@@ -495,8 +495,10 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
       vibration;
 
   String _detectPreset(String pTmpl, String dTmpl) {
-    if (pTmpl == '{rute} unit {unit}, {detik} detik lagi.' &&
-        dTmpl == '{rute} unit {unit}, saatnya berangkat.') {
+    if ((pTmpl == '{rute} unit {unit}, {pramudi}, {detik} detik lagi.' ||
+            pTmpl == '{rute} unit {unit}, {detik} detik lagi.') &&
+        (dTmpl == '{rute} unit {unit}, {pramudi}, saatnya berangkat.' ||
+            dTmpl == '{rute} unit {unit}, saatnya berangkat.')) {
       return 'ringkas';
     }
     if (pTmpl == '{rute} {unit}, {detik} detik.' &&
@@ -514,8 +516,8 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
     setState(() {
       selectedPreset = preset;
       if (preset == 'ringkas') {
-        prepTemplateController.text = '{rute} unit {unit}, {detik} detik lagi.';
-        dueTemplateController.text = '{rute} unit {unit}, saatnya berangkat.';
+        prepTemplateController.text = '{rute} unit {unit}, {pramudi}, {detik} detik lagi.';
+        dueTemplateController.text = '{rute} unit {unit}, {pramudi}, saatnya berangkat.';
       } else if (preset == 'super_singkat') {
         prepTemplateController.text = '{rute} {unit}, {detik} detik.';
         dueTemplateController.text = '{rute} {unit}, jalan!';
@@ -1044,6 +1046,7 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                                         children: [
                                           _insertChip('+ {rute}', () => _insertTag(prepTemplateController, '{rute}'), cyan, isDark),
                                           _insertChip('+ {unit}', () => _insertTag(prepTemplateController, '{unit}'), cyan, isDark),
+                                          _insertChip('+ {pramudi}', () => _insertTag(prepTemplateController, '{pramudi}'), cyan, isDark),
                                           _insertChip('+ {detik}', () => _insertTag(prepTemplateController, '{detik}'), cyan, isDark),
                                           _insertChip('+ {jam}', () => _insertTag(prepTemplateController, '{jam}'), cyan, isDark),
                                           _insertChip('+ {ritase}', () => _insertTag(prepTemplateController, '{ritase}'), cyan, isDark),
@@ -1073,6 +1076,7 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                                         children: [
                                           _insertChip('+ {rute}', () => _insertTag(dueTemplateController, '{rute}'), cyan, isDark),
                                           _insertChip('+ {unit}', () => _insertTag(dueTemplateController, '{unit}'), cyan, isDark),
+                                          _insertChip('+ {pramudi}', () => _insertTag(dueTemplateController, '{pramudi}'), cyan, isDark),
                                           _insertChip('+ {jam}', () => _insertTag(dueTemplateController, '{jam}'), cyan, isDark),
                                           _insertChip('+ {ritase}', () => _insertTag(dueTemplateController, '{ritase}'), cyan, isDark),
                                         ],

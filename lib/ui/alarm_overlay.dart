@@ -274,6 +274,30 @@ class _ForegroundAlarmOverlayState
                                 ),
                               ),
                             ),
+                            if (event.driverName.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: accentColor.withValues(alpha: 0.4),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  'PRAMUDI: ${event.driverName.toUpperCase()}',
+                                  style: TextStyle(
+                                    fontFamily: HedgeTokens.cyberFont,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.0,
+                                    color: accentColor,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 16),
 
                             // 3. Giant Chrono-Dial Radar (220dp)
