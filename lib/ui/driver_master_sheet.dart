@@ -480,9 +480,6 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                   ),
                   onPressed: () {
                     final callName = callController.text.trim();
-                    final fullName = nameController.text.trim().isNotEmpty
-                        ? nameController.text.trim()
-                        : callName;
                     if (callName.isEmpty) return;
                     Navigator.pop(ctx, true);
                   },
