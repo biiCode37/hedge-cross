@@ -1859,69 +1859,93 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         ),
         const SizedBox(height: 4),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            itemCount: workspace.routes.length,
-            itemBuilder: (_, i) {
-              final r = workspace.routes[i];
-              return CockpitManifestCard(
-                key: ValueKey('route-card-${r.id}'),
-                isAmber: !r.participates,
-                onTap: () {
-                  setState(() => roundFilter = null);
-                  controller.selectRoute(r.id);
-                  setState(() => destination = 0);
-                },
-                leading: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF070B12) : p.raised,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Color(r.color).withValues(alpha: 0.8),
-                      width: 1.5,
+          child: Builder(
+            builder: (context) {
+              final sortedRoutes = [...workspace.routes]..sort((a, b) {
+                  if (a.participates == b.participates) return 0;
+                  return a.participates ? -1 : 1;
+                });
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                itemCount: sortedRoutes.length,
+                itemBuilder: (_, i) {
+                  final r = sortedRoutes[i];
+                  return CockpitManifestCard(
+                    key: ValueKey('route-card-${r.id}'),
+                    isAmber: !r.participates,
+                    onTap: () {
+                      setState(() => roundFilter = null);
+                      controller.selectRoute(r.id);
+                      setState(() => destination = 0);
+                    },
+                    leading: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF070B12) : p.raised,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Color(r.color).withValues(alpha: 0.8),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.alt_route,
+                        size: 20,
+                        color: Color(r.color),
+                      ),
                     ),
-                  ),
-                  child: Icon(
-                    Icons.alt_route,
-                    size: 20,
-                    color: Color(r.color),
-                  ),
-                ),
-                title: Row(
-                  children: [
-                    Flexible(
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              r.code,
+                              style: TextStyle(
+                                fontFamily: HedgeTokens.cyberFont,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                letterSpacing: 0.6,
+                                color: isDark ? Colors.white : p.text,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            CockpitStatusBadge(
+                              label: r.participates ? 'AKTIF' : 'NONAKTIF',
+                              isAmber: !r.participates,
+                            ),
+                          ],
+                        ),
+                        if (r.trajectory.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            r.trajectory,
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12.5,
+                              color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        r.name,
+                        '${r.activeUnits.length} unit · ${r.config.start}–${r.config.end}',
                         style: TextStyle(
                           fontFamily: HedgeTokens.cyberFont,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          letterSpacing: 0.5,
-                          color: isDark ? Colors.white : p.text,
+                          fontSize: 11.5,
+                          color: isDark ? const Color(0xFF64748B) : p.muted,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (!r.participates) ...[
-                      const SizedBox(width: 8),
-                      const CockpitStatusBadge(
-                        label: 'NONAKTIF',
-                        isAmber: true,
-                      ),
-                    ],
-                  ],
-                ),
-                subtitle: Text(
-                  '${r.activeUnits.length} unit · ${r.config.start}–${r.config.end}',
-                  style: TextStyle(
-                    fontFamily: HedgeTokens.cyberFont,
-                    fontSize: 12,
-                    color: isDark ? const Color(0xFF94A3B8) : p.muted,
-                  ),
-                ),
-                trailing: PopupMenuButton<String>(
+                    trailing: PopupMenuButton<String>(
                   tooltip: 'Opsi rute',
                   onSelected: (action) async {
                     switch (action) {
