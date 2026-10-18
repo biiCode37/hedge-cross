@@ -20,9 +20,10 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
-    final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
-    final p = context.hedge;
+    final p = Theme.of(context).extension<HedgePalette>() ??
+        (isDark ? HedgePalette.dark : HedgePalette.light);
+    final cyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
+    final amber = isDark ? const Color(0xFFFF9800) : p.amberInk;
 
     // Ambil rute terbaru dari workspace provider jika ada
     final workspace = ref.watch(workspaceProvider).workspace;
@@ -368,8 +369,9 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
 
   Future<void> _openDriverForm(HedgeRoute route, {Driver? existing}) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
-    final p = context.hedge;
+    final p = Theme.of(context).extension<HedgePalette>() ??
+        (isDark ? HedgePalette.dark : HedgePalette.light);
+    final cyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
 
     final nameController = TextEditingController(text: existing?.fullName ?? '');
     final callController = TextEditingController(text: existing?.callName ?? '');
