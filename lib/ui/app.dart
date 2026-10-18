@@ -254,7 +254,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${route.name} · ${route.activeUnits.length} Unit Aktif',
+                          '${route.code} · ${route.activeUnits.length} Unit Aktif',
                           style: TextStyle(
                             fontFamily: HedgeTokens.cyberFont,
                             fontSize: 11.5,
@@ -498,7 +498,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
           };
     return Scaffold(
       appBar: AvionicsTopBar(
-        activeRouteName: route?.name ?? '',
+        activeRouteName: route?.code ?? '',
         onTvBoard: workspace.routes.any((r) => r.schedule != null)
             ? () => Navigator.push(
                 context,
@@ -515,16 +515,18 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
           children: [
             if (state.saving) const LinearProgressIndicator(minHeight: 2),
 
-            if (workspace.routes.isNotEmpty)
+            final activeRoutes =
+                workspace.routes.where((r) => r.participates).toList();
+            if (activeRoutes.isNotEmpty)
               SizedBox(
                 height: 56,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: workspace.routes.length,
+                  itemCount: activeRoutes.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
-                    final r = workspace.routes[i];
+                    final r = activeRoutes[i];
                     final isSelected = route?.id == r.id;
                     final isDark = Theme.of(context).brightness == Brightness.dark;
                     final activeCyan = isDark ? const Color(0xFF00E5FF) : p.cyanInk;
@@ -547,7 +549,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                               : null,
                         ),
                       ),
-                      label: Text('${r.name}${r.dirty ? ' •' : ''}'),
+                      label: Text('${r.code}${r.dirty ? ' •' : ''}'),
                       labelStyle: TextStyle(
                         fontFamily: HedgeTokens.cyberFont,
                         fontSize: 12,
@@ -1157,7 +1159,7 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   onPressed: () async {
                     if (await confirm(
                       'Rolling Shift Rute?',
-                      'Tukar supir pagi ⇄ siang untuk semua unit aktif pada rute ${route.name}?',
+                      'Tukar supir pagi ⇄ siang untuk semua unit aktif pada rute ${route.code}?',
                     )) {
                       await controller.rollAllDrivers(route);
                       toast('Jadwal shift seluruh unit aktif berhasil di-rolling.');
