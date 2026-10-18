@@ -226,6 +226,104 @@ class WorkspaceController extends Notifier<AppState> {
   Future<bool> reorder(HedgeRoute route, List<String> order) =>
       updateRoute(route.copyWith(order: order));
 
+  Future<bool> addDriver(HedgeRoute route, Driver driver) {
+    final updatedDrivers = [...route.drivers, driver];
+    return updateRoute(route.copyWith(drivers: updatedDrivers));
+  }
+
+  Future<bool> updateDriver(HedgeRoute route, Driver driver) {
+    final updatedDrivers = route.drivers
+        .map((d) => d.id == driver.id ? driver : d)
+        .toList();
+    return updateRoute(route.copyWith(drivers: updatedDrivers));
+  }
+
+  Future<bool> deleteDriver(HedgeRoute route, String driverId) {
+    final updatedDrivers = route.drivers.where((d) => d.id != driverId).toList();
+    final updatedUnits = route.units.map((u) {
+      return u.copyWith(
+        driverShift1Id: u.driverShift1Id == driverId ? null : u.driverShift1Id,
+        driverShift2Id: u.driverShift2Id == driverId ? null : u.driverShift2Id,
+        clearShift1: u.driverShift1Id == driverId,
+        clearShift2: u.driverShift2Id == driverId,
+      );
+    }).toList();
+    return updateRoute(route.copyWith(drivers: updatedDrivers, units: updatedUnits));
+  }
+
+  Future<bool> setUnitDrivers(
+    HedgeRoute route,
+    String unitId, {
+    String? shift1Id,
+    String? shift2Id,
+    bool clearShift1 = false,
+    bool clearShift2 = false,
+  }) {
+    final updatedUnits = route.units.map((u) {
+      if (u.id != unitId) return u;
+      return u.copyWith(
+        driverShift1Id: clearShift1 ? null : (shift1Id ?? u.driverShift1Id),
+        driverShift2Id: clearShift2 ? null : (shift2Id ?? u.driverShift2Id),
+        clearShift1: clearShift1,
+        clearShift2: clearShift2,
+      );
+    }).toList();
+    return updateRoute(route.copyWith(units: updatedUnits));
+  }
+
+  Future<bool> swapUnitDrivers(HedgeRoute route, String unitId) {
+    final updatedUnits = route.units.map((u) {
+      if (u.id != unitId) return u;
+      return u.copyWith(
+        driverShift1Id: u.driverShift2Id,
+        driverShift2Id: u.driverShift1Id,
+        clearShift1: u.driverShift2Id == null,
+        clearShift2: u.driverShift1Id == null,
+      );
+    }).toList();
+    return updateRoute(route.copyWith(units: updatedUnits));
+  }
+
+  Future<bool> rollAllDrivers(HedgeRoute route) {
+    final updatedUnits = route.units.map((u) {
+      return u.copyWith(
+        driverShift1Id: u.driverShift2Id,
+        driverShift2Id: u.driverShift1Id,
+        clearShift1: u.driverShift2Id == null,
+        clearShift2: u.driverShift1Id == null,
+      );
+    }).toList();
+    return updateRoute(route.copyWith(units: updatedUnits));
+  }
+
+  Future<bool> autoPairDefaultDrivers(HedgeRoute route) {
+    final defaultShift1ByUnit = <String, String>{};
+    final defaultShift2ByUnit = <String, String>{};
+
+    for (final d in route.drivers) {
+      if (d.status == DriverStatus.tetap && d.defaultUnitNumber != null) {
+        final cleanUnitNum = d.defaultUnitNumber!.trim();
+        if (d.defaultShift == 1 || d.defaultShift == null) {
+          defaultShift1ByUnit[cleanUnitNum] = d.id;
+        } else if (d.defaultShift == 2) {
+          defaultShift2ByUnit[cleanUnitNum] = d.id;
+        }
+      }
+    }
+
+    final updatedUnits = route.units.map((u) {
+      final parsed = splitUnitNumber(u.number);
+      final shift1Id = defaultShift1ByUnit[u.number] ?? defaultShift1ByUnit[parsed.number] ?? u.driverShift1Id;
+      final shift2Id = defaultShift2ByUnit[u.number] ?? defaultShift2ByUnit[parsed.number] ?? u.driverShift2Id;
+      return u.copyWith(
+        driverShift1Id: shift1Id,
+        driverShift2Id: shift2Id,
+      );
+    }).toList();
+
+    return updateRoute(route.copyWith(units: updatedUnits));
+  }
+
   Future<bool> generate(HedgeRoute route, {bool replan = false}) async {
     try {
       final now = DateTime.now();
