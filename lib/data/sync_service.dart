@@ -19,7 +19,7 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
     try {
       var query = _supabase
           .from('master_routes')
-          .select('*, master_units(*)');
+          .select('*, master_units(*), master_drivers(*)');
 
       if (since != null) {
         query = query.gt('updated_at', since.toUtc().toIso8601String());
@@ -61,6 +61,34 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
     final displayName = '$code — $name';
     final color = raw['color'] is int ? raw['color'] as int : 0xFFFF9800;
 
+    final rawDrivers = (raw['master_drivers'] as List? ?? <dynamic>[])
+        .cast<Map<String, dynamic>>();
+
+    final drivers = <Driver>[];
+    for (final d in rawDrivers) {
+      final dUuid = d['uuid'] as String? ?? (d['id']?.toString() ?? '');
+      final fullName = d['full_name'] as String? ?? '';
+      final callName = d['call_name'] as String? ?? fullName;
+      final statusStr = d['status'] as String? ?? 'tetap';
+      final status = statusStr.toLowerCase() == 'cadangan'
+          ? DriverStatus.cadangan
+          : DriverStatus.tetap;
+      final defaultUnit = d['default_unit_number'] as String?;
+      final defaultShift = d['default_shift'] as int?;
+      final active = d['active'] as bool? ?? true;
+
+      drivers.add(Driver(
+        id: dUuid,
+        routeId: uuid ?? code,
+        fullName: fullName,
+        callName: callName,
+        status: status,
+        defaultUnitNumber: defaultUnit,
+        defaultShift: defaultShift,
+        active: active,
+      ));
+    }
+
     final rawUnits = (raw['master_units'] as List? ?? <dynamic>[])
         .cast<Map<String, dynamic>>();
 
@@ -78,7 +106,23 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
       final numStr = u['number'] as String? ?? '';
       final unitId = '$code:$numStr';
       final active = u['active'] as bool? ?? true;
-      fleetUnits.add(FleetUnit(id: unitId, number: numStr, active: active));
+
+      String? shift1Id;
+      String? shift2Id;
+      for (final d in drivers) {
+        if (d.active && d.defaultUnitNumber == numStr) {
+          if (d.defaultShift == 1) shift1Id = d.id;
+          if (d.defaultShift == 2) shift2Id = d.id;
+        }
+      }
+
+      fleetUnits.add(FleetUnit(
+        id: unitId,
+        number: numStr,
+        active: active,
+        driverShift1Id: shift1Id,
+        driverShift2Id: shift2Id,
+      ));
       if (active) order.add(unitId);
     }
 
@@ -90,18 +134,33 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
       startRound: 1,
       slowFirst: false,
       peakEnabled: false,
+      shiftChangeTime: rawConfig['shiftChangeTime'] as String? ?? '13:00',
     );
 
     final existingIndex = updatedRoutes.indexWhere((r) => r.id == uuid || r.name.startsWith(code));
 
     if (existingIndex >= 0) {
       final existing = updatedRoutes[existingIndex];
-      // Keep existing schedule if valid
+      // Keep existing unit driver assignments if present
+      final mergedUnits = fleetUnits.isNotEmpty
+          ? fleetUnits.map((u) {
+              final exUnit = existing.units.where((e) => e.id == u.id).firstOrNull;
+              if (exUnit != null && (exUnit.driverShift1Id != null || exUnit.driverShift2Id != null)) {
+                return u.copyWith(
+                  driverShift1Id: exUnit.driverShift1Id,
+                  driverShift2Id: exUnit.driverShift2Id,
+                );
+              }
+              return u;
+            }).toList()
+          : existing.units;
+
       updatedRoutes[existingIndex] = existing.copyWith(
         name: displayName,
         color: color,
-        units: fleetUnits.isNotEmpty ? fleetUnits : existing.units,
+        units: mergedUnits,
         order: order.isNotEmpty ? order : existing.order,
+        drivers: drivers.isNotEmpty ? drivers : existing.drivers,
         config: config,
       );
     } else {
@@ -111,6 +170,7 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
         color: color,
         units: fleetUnits,
         order: order,
+        drivers: drivers,
         config: config,
       );
       if (newRoute.activeUnits.isNotEmpty) {
