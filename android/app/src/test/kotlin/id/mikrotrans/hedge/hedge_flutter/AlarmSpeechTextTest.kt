@@ -139,4 +139,22 @@ class AlarmSpeechTextTest {
         assertEquals("Unit delapan belas enam lima, saatnya berangkat.",
             AlarmSpeechText.message(eventBlank, 10000))
     }
+
+    @Test fun driverNameSubstitution() {
+        val eventWithDriver = AlarmSpec("k", "r", "rev", "d", "JAK.115", "1865",
+            "due", 0, 10000, 1, 20, true, true, true, true, "dark",
+            dueTemplate = "{rute} unit {unit}, {pramudi}, saatnya berangkat.",
+            isMultiRoute = true, driverName = "Bambang")
+        assertEquals("JAK 115 unit delapan belas enam lima, Bambang, saatnya berangkat.",
+            AlarmSpeechText.message(eventWithDriver, 10000))
+    }
+
+    @Test fun driverNameEmptyGracefulFallback() {
+        val eventNoDriver = AlarmSpec("k", "r", "rev", "d", "JAK.115", "1865",
+            "due", 0, 10000, 1, 20, true, true, true, true, "dark",
+            dueTemplate = "Unit {unit}, {pramudi}, saatnya berangkat.",
+            isMultiRoute = false, driverName = "")
+        assertEquals("Unit delapan belas enam lima, saatnya berangkat.",
+            AlarmSpeechText.message(eventNoDriver, 10000))
+    }
 }

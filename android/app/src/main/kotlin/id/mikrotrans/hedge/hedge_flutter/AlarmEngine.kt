@@ -34,9 +34,10 @@ object AlarmEngine {
         j.getInt("round"), j.getInt("durationSeconds").coerceIn(1, 300),
         j.optBoolean("banner", true), j.optBoolean("fullScreen", true),
         j.optBoolean("sound", true), j.optBoolean("vibration", true), j.optString("theme", "dark"),
-        j.optString("prepTemplate", "{rute} unit {unit}, {detik} detik lagi."),
-        j.optString("dueTemplate", "{rute} unit {unit}, saatnya berangkat."),
-        j.optBoolean("isMultiRoute", false))
+        j.optString("prepTemplate", "{rute} unit {unit}, {pramudi}, {detik} detik lagi."),
+        j.optString("dueTemplate", "{rute} unit {unit}, {pramudi}, saatnya berangkat."),
+        j.optBoolean("isMultiRoute", false),
+        j.optString("driverName", ""))
     private fun json(e: AlarmSpec) = JSONObject().put("key", e.key).put("routeId", e.routeId)
         .put("revisionId", e.revisionId).put("departureId", e.departureId)
         .put("routeName", e.routeName).put("unitNumber", e.unitNumber).put("stage", e.stage)
@@ -44,6 +45,7 @@ object AlarmEngine {
         .put("durationSeconds", e.durationSeconds).put("banner", e.banner).put("fullScreen", e.fullScreen)
         .put("sound", e.sound).put("vibration", e.vibration).put("theme", e.theme)
         .put("prepTemplate", e.prepTemplate).put("dueTemplate", e.dueTemplate).put("isMultiRoute", e.isMultiRoute)
+        .put("driverName", e.driverName)
     private fun plan(s: JSONObject) = objects(s.optJSONArray("plan")).map(::spec)
     private fun active(s: JSONObject) = objects(s.optJSONArray("active")).map {
         ActiveAlarm(spec(it.getJSONObject("event")), it.getLong("shownAt"))

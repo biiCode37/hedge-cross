@@ -60,11 +60,12 @@ object AlarmSpeechText {
     }
 
     fun format(template: String, event: AlarmSpec, now: Long): String {
-        val defaultTmpl = if (event.stage == "prep") "{rute} unit {unit}, {detik} detik lagi." else "{rute} unit {unit}, saatnya berangkat."
+        val defaultTmpl = if (event.stage == "prep") "{rute} unit {unit}, {pramudi}, {detik} detik lagi." else "{rute} unit {unit}, {pramudi}, saatnya berangkat."
         val chosenTmpl = if (template.isBlank()) defaultTmpl else template
 
         val routeSpoken = if (event.isMultiRoute) routeCode(event.routeName) else ""
         val unitSpoken = unitLast4(event.unitNumber)
+        val driverSpoken = event.driverName.trim()
         val remainingSec = ((event.departureAt - now + 999) / 1000).coerceAtLeast(1)
         val secondsSpoken = "$remainingSec"
 
@@ -82,6 +83,7 @@ object AlarmSpeechText {
 
         result = result
             .replace("{unit}", unitSpoken, ignoreCase = true)
+            .replace("{pramudi}", driverSpoken, ignoreCase = true)
             .replace("{detik}", secondsSpoken, ignoreCase = true)
             .replace("{jam}", timeFormatted, ignoreCase = true)
             .replace("{ritase}", ritaseSpoken, ignoreCase = true)
@@ -90,7 +92,8 @@ object AlarmSpeechText {
         result = result
             .replace(Regex("""\s*,\s*"""), ", ")
             .replace(Regex("""\s*\.\s*"""), ". ")
-            .replace(Regex("""^[,\s.-]+"""), "")
+            .replace(Regex("""^([,\s.-]+)"""), "")
+            .replace(Regex(""",\s*(,\s*)+"""), ", ")
             .replace(Regex("""\s+"""), " ")
             .trim()
 
