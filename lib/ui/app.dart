@@ -1169,6 +1169,23 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                   icon: const Icon(Icons.sync_alt, size: 13),
                   label: const Text('Rolling Shift', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  key: const ValueKey('auto-pair-drivers-btn'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF10B981),
+                    side: BorderSide(color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.6 : 0.8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  onPressed: () async {
+                    await controller.autoPairDefaultDrivers(route);
+                    toast('Pramudi tetap berhasil dipasangkan ke unit bawaan.');
+                  },
+                  icon: const Icon(Icons.auto_fix_high, size: 13),
+                  label: const Text('Pasangkan Bawaan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
               ];
 
               if (isNarrow) {
@@ -1226,7 +1243,16 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  ...buttons,
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: buttons,
+                      ),
+                    ),
+                  ),
                 ],
               );
             },
@@ -1403,6 +1429,10 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
               final selectionIndex = selectedFleetIds.indexOf(unit.id);
               final isSelected = selectionIndex != -1;
               final parsed = splitUnitNumber(unit.number);
+              final now = ref.watch(clockProvider).value ?? DateTime.now();
+              final shiftCutoff = parseMinute(route.config.shiftChangeTime);
+              final currentMinute = now.hour * 60 + now.minute;
+              final isShift1Active = currentMinute < shiftCutoff;
               return CockpitManifestCard(
                 key: ValueKey('unit-card-${unit.id}'),
                 isAmber: !unit.active,
@@ -1489,11 +1519,15 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF070B12) : p.raised,
+                              color: isShift1Active
+                                  ? (isDark ? cyan.withValues(alpha: 0.16) : p.cyanInk.withValues(alpha: 0.1))
+                                  : (isDark ? const Color(0xFF070B12) : p.raised),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: (isDark ? cyan : p.cyanInk).withValues(alpha: 0.35),
-                                width: 0.8,
+                                color: isShift1Active
+                                    ? (isDark ? cyan : p.cyanInk)
+                                    : (isDark ? cyan : p.cyanInk).withValues(alpha: 0.25),
+                                width: isShift1Active ? 1.4 : 0.8,
                               ),
                             ),
                             child: Row(
@@ -1506,13 +1540,25 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                                     style: TextStyle(
                                       fontFamily: HedgeTokens.cyberFont,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: isShift1Active ? FontWeight.w800 : FontWeight.w600,
                                       color: d1 != null
                                           ? (isDark ? Colors.white : p.text)
                                           : (isDark ? const Color(0xFF64748B) : p.muted),
                                     ),
                                   ),
                                 ),
+                                if (isShift1Active)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 3),
+                                    child: Text(
+                                      '●',
+                                      style: TextStyle(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? cyan : p.cyanInk,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -1540,11 +1586,15 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF070B12) : p.raised,
+                              color: !isShift1Active
+                                  ? (isDark ? amber.withValues(alpha: 0.16) : p.amberInk.withValues(alpha: 0.1))
+                                  : (isDark ? const Color(0xFF070B12) : p.raised),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: (isDark ? amber : p.amberInk).withValues(alpha: 0.35),
-                                width: 0.8,
+                                color: !isShift1Active
+                                    ? (isDark ? amber : p.amberInk)
+                                    : (isDark ? amber : p.amberInk).withValues(alpha: 0.25),
+                                width: !isShift1Active ? 1.4 : 0.8,
                               ),
                             ),
                             child: Row(
@@ -1557,13 +1607,25 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                                     style: TextStyle(
                                       fontFamily: HedgeTokens.cyberFont,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: !isShift1Active ? FontWeight.w800 : FontWeight.w600,
                                       color: d2 != null
                                           ? (isDark ? Colors.white : p.text)
                                           : (isDark ? const Color(0xFF64748B) : p.muted),
                                     ),
                                   ),
                                 ),
+                                if (!isShift1Active)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 3),
+                                    child: Text(
+                                      '●',
+                                      style: TextStyle(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? amber : p.amberInk,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -1898,7 +1960,10 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               r.code,
@@ -1910,7 +1975,6 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
                                 color: isDark ? Colors.white : p.text,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             CockpitStatusBadge(
                               label: r.participates ? 'AKTIF' : 'NONAKTIF',
                               isAmber: !r.participates,

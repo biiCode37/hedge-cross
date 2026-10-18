@@ -113,6 +113,40 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                 ),
                 IconButton.filled(
                   style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.15),
+                    foregroundColor: const Color(0xFF10B981),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+                    ),
+                  ),
+                  tooltip: 'Sinkronkan ke Cloud Supabase',
+                  onPressed: () async {
+                    final scaffold = ScaffoldMessenger.of(context);
+                    scaffold.showSnackBar(
+                      const SnackBar(
+                        content: Text('Menyinkronkan master pramudi ke Supabase Cloud...'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                    final ok = await ref.read(workspaceProvider.notifier).syncDriversToCloud(currentRoute);
+                    scaffold.hideCurrentSnackBar();
+                    scaffold.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ok
+                              ? '${currentRoute.drivers.length} pramudi berhasil disinkronkan ke Cloud.'
+                              : 'Gagal sinkronisasi ke cloud (periksa koneksi internet).',
+                        ),
+                        backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
                     backgroundColor: cyan.withValues(alpha: isDark ? 0.2 : 0.15),
                     foregroundColor: cyan,
                     shape: RoundedRectangleBorder(

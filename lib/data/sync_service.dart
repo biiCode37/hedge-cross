@@ -6,6 +6,8 @@ import '../domain/scheduler.dart';
 abstract interface class CloudSyncClient {
   Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since);
   Future<void> pushOutbox(List<Map<String, dynamic>> items);
+  Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers);
+  Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId);
 }
 
 class SupabaseCloudSyncClient implements CloudSyncClient {
@@ -41,6 +43,99 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
     } catch (e) {
       debugPrint('SupabaseCloudSyncClient pushOutbox error: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
+    if (drivers.isEmpty) return;
+    try {
+      String routeUuid = routeIdentifier;
+      final isUuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(routeIdentifier);
+      if (!isUuid) {
+        final code = routeIdentifier.contains('—')
+            ? routeIdentifier.split('—').first.trim()
+            : (routeIdentifier.contains('-')
+                ? routeIdentifier.split('-').first.trim()
+                : routeIdentifier.trim());
+        final res = await _supabase
+            .from('master_routes')
+            .select('uuid')
+            .ilike('route_code', '$code%')
+            .limit(1)
+            .maybeSingle();
+        if (res != null && res['uuid'] != null) {
+          routeUuid = res['uuid'] as String;
+        } else {
+          debugPrint('pushDrivers: Route UUID tidak ditemukan untuk $routeIdentifier');
+          return;
+        }
+      }
+
+      final payload = drivers.map((d) {
+        final map = <String, dynamic>{
+          'route_uuid': routeUuid,
+          'full_name': d.fullName,
+          'call_name': d.callName,
+          'status': d.status == DriverStatus.cadangan ? 'cadangan' : 'tetap',
+          'default_unit_number': d.defaultUnitNumber,
+          'default_shift': d.defaultShift,
+          'active': d.active,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        };
+        if (RegExp(
+          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+        ).hasMatch(d.id)) {
+          map['uuid'] = d.id;
+        }
+        return map;
+      }).toList();
+
+      await _supabase.from('master_drivers').upsert(
+        payload,
+        onConflict: 'route_uuid,call_name',
+      );
+    } catch (e) {
+      debugPrint('SupabaseCloudSyncClient pushDrivers error: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {
+    try {
+      String routeUuid = routeIdentifier;
+      final isUuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(routeIdentifier);
+      if (!isUuid) {
+        final code = routeIdentifier.contains('—')
+            ? routeIdentifier.split('—').first.trim()
+            : (routeIdentifier.contains('-')
+                ? routeIdentifier.split('-').first.trim()
+                : routeIdentifier.trim());
+        final res = await _supabase
+            .from('master_routes')
+            .select('uuid')
+            .ilike('route_code', '$code%')
+            .limit(1)
+            .maybeSingle();
+        if (res != null && res['uuid'] != null) {
+          routeUuid = res['uuid'] as String;
+        } else {
+          return;
+        }
+      }
+
+      await _supabase
+          .from('master_drivers')
+          .delete()
+          .eq('route_uuid', routeUuid)
+          .or('uuid.eq.$driverCallNameOrId,call_name.eq.$driverCallNameOrId');
+    } catch (e) {
+      debugPrint('SupabaseCloudSyncClient deleteDriverCloud error: $e');
     }
   }
 }

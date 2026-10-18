@@ -29,12 +29,18 @@ class HedgeDatabase extends GeneratedDatabase {
         throw StateError('Versi database $from → $to belum didukung.'),
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      try {
+        await customStatement('ALTER TABLE units ADD COLUMN driver_shift1_id TEXT;');
+      } catch (_) {}
+      try {
+        await customStatement('ALTER TABLE units ADD COLUMN driver_shift2_id TEXT;');
+      } catch (_) {}
     },
   );
   static const _schema = [
     'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
     'CREATE TABLE routes (id TEXT PRIMARY KEY, position INTEGER NOT NULL, config TEXT NOT NULL, current_revision TEXT)',
-    'CREATE TABLE units (id TEXT PRIMARY KEY, route_id TEXT NOT NULL REFERENCES routes(id) ON DELETE CASCADE, number TEXT NOT NULL, active INTEGER NOT NULL CHECK(active IN (0,1)), position INTEGER NOT NULL, UNIQUE(route_id, number))',
+    'CREATE TABLE units (id TEXT PRIMARY KEY, route_id TEXT NOT NULL REFERENCES routes(id) ON DELETE CASCADE, number TEXT NOT NULL, active INTEGER NOT NULL CHECK(active IN (0,1)), position INTEGER NOT NULL, driver_shift1_id TEXT, driver_shift2_id TEXT, UNIQUE(route_id, number))',
     'CREATE TABLE revisions (id TEXT PRIMARY KEY, route_id TEXT NOT NULL, service_date TEXT NOT NULL, metadata TEXT NOT NULL)',
     'CREATE TABLE departures (revision_id TEXT NOT NULL REFERENCES revisions(id), id TEXT NOT NULL, ordinal INTEGER NOT NULL, unit_id TEXT NOT NULL, number TEXT NOT NULL, minute INTEGER NOT NULL, round INTEGER NOT NULL, peak INTEGER NOT NULL, gap INTEGER, PRIMARY KEY(revision_id,id), UNIQUE(revision_id,ordinal))',
     'CREATE INDEX departures_time ON departures(revision_id,minute,ordinal)',
@@ -89,6 +95,10 @@ class LocalWorkspaceRepository implements WorkspaceRepository {
               'id': u.read<String>('id'),
               'number': u.read<String>('number'),
               'active': u.read<int>('active') == 1,
+              if (u.readNullable<String>('driver_shift1_id') != null)
+                'driverShift1Id': u.readNullable<String>('driver_shift1_id'),
+              if (u.readNullable<String>('driver_shift2_id') != null)
+                'driverShift2Id': u.readNullable<String>('driver_shift2_id'),
             },
           )
           .toList();
@@ -198,8 +208,8 @@ class LocalWorkspaceRepository implements WorkspaceRepository {
       for (var i = 0; i < route.units.length; i++) {
         final unit = route.units[i];
         await db.customStatement(
-          'INSERT INTO units(id,route_id,number,active,position) VALUES(?,?,?,?,?)',
-          [unit.id, route.id, unit.number, unit.active ? 1 : 0, i],
+          'INSERT INTO units(id,route_id,number,active,position,driver_shift1_id,driver_shift2_id) VALUES(?,?,?,?,?,?,?)',
+          [unit.id, route.id, unit.number, unit.active ? 1 : 0, i, unit.driverShift1Id, unit.driverShift2Id],
         );
       }
     }

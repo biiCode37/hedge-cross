@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../data/sync_service.dart';
 import '../data/workspace_repository.dart';
 import '../domain/models.dart';
 import '../domain/alarm_plan.dart';
@@ -226,19 +228,86 @@ class WorkspaceController extends Notifier<AppState> {
   Future<bool> reorder(HedgeRoute route, List<String> order) =>
       updateRoute(route.copyWith(order: order));
 
+  List<FleetUnit> _applyAutoPair(List<FleetUnit> units, List<Driver> drivers) {
+    final defaultShift1ByUnit = <String, String>{};
+    final defaultShift2ByUnit = <String, String>{};
+
+    for (final d in drivers) {
+      if (d.status == DriverStatus.tetap && d.defaultUnitNumber != null && d.active) {
+        final cleanUnitNum = d.defaultUnitNumber!.trim();
+        final parsedClean = splitUnitNumber(cleanUnitNum).number;
+        if (d.defaultShift == 1 || d.defaultShift == null) {
+          defaultShift1ByUnit[cleanUnitNum] = d.id;
+          if (parsedClean.isNotEmpty) defaultShift1ByUnit[parsedClean] = d.id;
+        } else if (d.defaultShift == 2) {
+          defaultShift2ByUnit[cleanUnitNum] = d.id;
+          if (parsedClean.isNotEmpty) defaultShift2ByUnit[parsedClean] = d.id;
+        }
+      }
+    }
+
+    return units.map((u) {
+      final parsed = splitUnitNumber(u.number);
+      final shift1Id = defaultShift1ByUnit[u.number] ??
+          (parsed.number.isNotEmpty ? defaultShift1ByUnit[parsed.number] : null) ??
+          u.driverShift1Id;
+      final shift2Id = defaultShift2ByUnit[u.number] ??
+          (parsed.number.isNotEmpty ? defaultShift2ByUnit[parsed.number] : null) ??
+          u.driverShift2Id;
+      return u.copyWith(
+        driverShift1Id: shift1Id,
+        driverShift2Id: shift2Id,
+      );
+    }).toList();
+  }
+
+  void _syncDriverCloud(HedgeRoute route, List<Driver> drivers) {
+    try {
+      final client = SupabaseCloudSyncClient();
+      client.pushDrivers(route.id, drivers).catchError((e) {
+        debugPrint('Catatan sync driver ke cloud (offline fallback): $e');
+      });
+    } catch (_) {}
+  }
+
+  void _deleteDriverCloud(HedgeRoute route, String driverCallNameOrId) {
+    try {
+      final client = SupabaseCloudSyncClient();
+      client.deleteDriverCloud(route.id, driverCallNameOrId).catchError((e) {
+        debugPrint('Catatan delete driver di cloud (offline fallback): $e');
+      });
+    } catch (_) {}
+  }
+
+  Future<bool> syncDriversToCloud(HedgeRoute route) async {
+    try {
+      final client = SupabaseCloudSyncClient();
+      await client.pushDrivers(route.id, route.drivers);
+      return true;
+    } catch (e) {
+      debugPrint('Sync drivers gagal: $e');
+      return false;
+    }
+  }
+
   Future<bool> addDriver(HedgeRoute route, Driver driver) {
     final updatedDrivers = [...route.drivers, driver];
-    return updateRoute(route.copyWith(drivers: updatedDrivers));
+    final updatedUnits = _applyAutoPair(route.units, updatedDrivers);
+    _syncDriverCloud(route, [driver]);
+    return updateRoute(route.copyWith(drivers: updatedDrivers, units: updatedUnits));
   }
 
   Future<bool> updateDriver(HedgeRoute route, Driver driver) {
     final updatedDrivers = route.drivers
         .map((d) => d.id == driver.id ? driver : d)
         .toList();
-    return updateRoute(route.copyWith(drivers: updatedDrivers));
+    final updatedUnits = _applyAutoPair(route.units, updatedDrivers);
+    _syncDriverCloud(route, [driver]);
+    return updateRoute(route.copyWith(drivers: updatedDrivers, units: updatedUnits));
   }
 
   Future<bool> deleteDriver(HedgeRoute route, String driverId) {
+    final targetDriver = route.drivers.where((d) => d.id == driverId).firstOrNull;
     final updatedDrivers = route.drivers.where((d) => d.id != driverId).toList();
     final updatedUnits = route.units.map((u) {
       return u.copyWith(
@@ -248,6 +317,9 @@ class WorkspaceController extends Notifier<AppState> {
         clearShift2: u.driverShift2Id == driverId,
       );
     }).toList();
+    if (targetDriver != null) {
+      _deleteDriverCloud(route, targetDriver.callName);
+    }
     return updateRoute(route.copyWith(drivers: updatedDrivers, units: updatedUnits));
   }
 
@@ -297,30 +369,7 @@ class WorkspaceController extends Notifier<AppState> {
   }
 
   Future<bool> autoPairDefaultDrivers(HedgeRoute route) {
-    final defaultShift1ByUnit = <String, String>{};
-    final defaultShift2ByUnit = <String, String>{};
-
-    for (final d in route.drivers) {
-      if (d.status == DriverStatus.tetap && d.defaultUnitNumber != null) {
-        final cleanUnitNum = d.defaultUnitNumber!.trim();
-        if (d.defaultShift == 1 || d.defaultShift == null) {
-          defaultShift1ByUnit[cleanUnitNum] = d.id;
-        } else if (d.defaultShift == 2) {
-          defaultShift2ByUnit[cleanUnitNum] = d.id;
-        }
-      }
-    }
-
-    final updatedUnits = route.units.map((u) {
-      final parsed = splitUnitNumber(u.number);
-      final shift1Id = defaultShift1ByUnit[u.number] ?? defaultShift1ByUnit[parsed.number] ?? u.driverShift1Id;
-      final shift2Id = defaultShift2ByUnit[u.number] ?? defaultShift2ByUnit[parsed.number] ?? u.driverShift2Id;
-      return u.copyWith(
-        driverShift1Id: shift1Id,
-        driverShift2Id: shift2Id,
-      );
-    }).toList();
-
+    final updatedUnits = _applyAutoPair(route.units, route.drivers);
     return updateRoute(route.copyWith(units: updatedUnits));
   }
 
