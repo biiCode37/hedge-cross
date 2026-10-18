@@ -1,14 +1,11 @@
-# SDD Progress Ledger: Master Data Pramudi, Penugasan Shift & Integrasi TTS
+# SDD Progress Ledger: UI/UX Ergonomi Rute dan Unit
 
-Plan: docs/superpowers/plans/2026-10-18-master-pramudi-dan-tts.md
-Started: 2026-10-18
+Plan: `docs/superpowers/plans/2026-10-18-ui-ux-ergonomi-rute-dan-unit.md`
 
-- [x] Task 1: Domain Models (Driver, FleetUnit, PlanConfig, Departure, AlarmEvent) (commit 7567661, review clean)
-- [x] Task 2: Logika Penugasan Supir di Scheduler (generate & replan) (commit a20d9c1, review clean)
-- [x] Task 3: Integrasi Suara Cerdas TTS Kotlin Android ({pramudi} & Fallback) (commit 07d664d, review clean)
-- [x] Task 4: State Management WorkspaceController (CRUD, Auto-Pairing, Swap & Rolling) (commit b165da7, review clean)
-- [x] Task 5: UI Halaman 02 Armada (Pembersihan Subtitle & Bar Supir Tandem dengan Swap) (commit ea1b53a, review clean)
-- [x] Task 6: Modal Lembar Kerja Master Pramudi (DriverMasterSheet) (commit 31deeca, review clean)
-- [x] Task 7: Integrasi Chip {pramudi} di Konfigurasi Suara & Tampilan Supir di Jadwal / HUD Alert (commit cc48b4c, review clean)
-- [x] Task 8: Database Supabase master_drivers & Penyesuaian Sinkronisasi (commit 0de21a8, review clean)
-- [x] Task 9: Verifikasi Penuh Test Suite & Penyusunan 4 Dokumen Refactor (commit e2265cb, review clean)
+## Tasks
+- [x] Task 1: Domain Model Parser (`splitRouteName`), `HedgeRoute` Getters & Unit Tests (commits 51b9851..599c7f8, 6/6 tests pass)
+- [x] Task 2: Top Bar Route Pills Filtering & Code-Only Display (commits 599c7f8..d12041e, 2/2 tests pass)
+- [x] Task 3: Halaman "04 Rute" Revamp (Active Route Sorting & Multi-Line Layout) (commits d12041e..575d7ee, 2/2 tests pass)
+- [x] Task 4: Standarisasi Kode Rute pada Master Pramudi & Perbaikan Filter Search Layout (commits 575d7ee..666a060, 10/10 tests pass)
+- [x] Task 5: Komponen Reusable `SearchableUnitPicker` & Integrasi Form Tambah Pramudi (commits 666a060..a68925a, 3/3 tests pass)
+- [ ] Task 6: Audit Komprehensif Seluruh Penggunaan Nomor Unit & Verifikasi Akhir

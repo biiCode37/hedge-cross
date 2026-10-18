@@ -496,6 +496,9 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
             2 => _order(route),
             _ => _routes(workspace),
           };
+    final activeRoutes =
+        workspace.routes.where((r) => r.participates).toList();
+
     return Scaffold(
       appBar: AvionicsTopBar(
         activeRouteName: route?.code ?? '',
@@ -515,8 +518,6 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
           children: [
             if (state.saving) const LinearProgressIndicator(minHeight: 2),
 
-            final activeRoutes =
-                workspace.routes.where((r) => r.participates).toList();
             if (activeRoutes.isNotEmpty)
               SizedBox(
                 height: 56,
@@ -1756,6 +1757,10 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
     final cyan = isDark ? const Color(0xFF00E5FF) : context.hedge.cyanInk;
     final amber = isDark ? const Color(0xFFFF9800) : context.hedge.amberInk;
     final p = context.hedge;
+    final sortedRoutes = [...workspace.routes]..sort((a, b) {
+        if (a.participates == b.participates) return 0;
+        return a.participates ? -1 : 1;
+      });
 
     return Column(
       children: [
@@ -1859,15 +1864,9 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
         ),
         const SizedBox(height: 4),
         Expanded(
-          child: Builder(
-            builder: (context) {
-              final sortedRoutes = [...workspace.routes]..sort((a, b) {
-                  if (a.participates == b.participates) return 0;
-                  return a.participates ? -1 : 1;
-                });
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                itemCount: sortedRoutes.length,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            itemCount: sortedRoutes.length,
                 itemBuilder: (_, i) {
                   final r = sortedRoutes[i];
                   return CockpitManifestCard(
