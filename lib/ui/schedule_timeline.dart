@@ -401,7 +401,7 @@ class TransitRailPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final centerX = size.width / 2;
     final centerY = size.height / 2;
-    final nodeRadius = focused ? 8.0 : (done ? 7.0 : 6.0);
+    final nodeRadius = focused ? 6.5 : (done ? 5.5 : 4.5);
 
     // Rel Garis Atas
     if (!isFirst) {
@@ -473,8 +473,8 @@ class TransitRailPainter extends CustomPainter {
       final auraPaint = Paint()
         ..color = activeColor.withValues(alpha: 0.35)
         ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      canvas.drawCircle(Offset(centerX, centerY), nodeRadius + 6, auraPaint);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(centerX, centerY), nodeRadius + 3, auraPaint);
 
       // Outer ring
       final ringPaint = Paint()
@@ -499,8 +499,8 @@ class TransitRailPainter extends CustomPainter {
       final auraPaint = Paint()
         ..color = activeColor.withValues(alpha: 0.3)
         ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawCircle(Offset(centerX, centerY), nodeRadius + 4, auraPaint);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset(centerX, centerY), nodeRadius + 2, auraPaint);
 
       // Outer amber ring
       final ringPaint = Paint()

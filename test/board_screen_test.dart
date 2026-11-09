@@ -112,6 +112,53 @@ void main() {
     expect(find.text('WAKTU BERANGKAT'), findsOneWidget);
   });
 
+  testWidgets('CyberBoardTimelineTile displays driver name replacing STANDBY when driver assigned', (
+    tester,
+  ) async {
+    final depWithDriver = Departure(
+      id: 'dep-driver',
+      ordinal: 1,
+      unitId: 'u-1865',
+      unitNumber: '1865',
+      minute: 420,
+      round: 1,
+      peak: true,
+      nextGap: 3,
+      driverName: 'Munif',
+    );
+    final targetTime = DateTime.utc(2026, 10, 7, 7, 10, 0);
+    final clockController = StreamController<DateTime>();
+    addTearDown(clockController.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          clockProvider.overrideWith((ref) => clockController.stream),
+        ],
+        child: MaterialApp(
+          theme: hedgeTheme(Brightness.dark),
+          home: Scaffold(
+            body: CyberBoardTimelineTile(
+              route: route,
+              departure: depWithDriver,
+              at: targetTime,
+              isFocused: false,
+              isFirst: false,
+              isLast: false,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    clockController.add(DateTime.utc(2026, 10, 7, 7, 5, 0)); // 5m remaining (> 60s)
+    await tester.pumpAndSettle();
+
+    // Replaces STANDBY with driver name
+    expect(find.text('Munif'), findsOneWidget);
+    expect(find.text('STANDBY'), findsNothing);
+  });
+
   for (final brightness in [Brightness.dark, Brightness.light]) {
     testWidgets('CyberBoardTimelineTile renders on 320px narrow screen without overflow (${brightness.name})', (
       tester,

@@ -227,7 +227,7 @@ class _BoardState extends ConsumerState<BoardScreen> {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 58,
+                      width: 60,
                       child: Text(
                         'WAKTU',
                         textAlign: TextAlign.right,
@@ -243,7 +243,7 @@ class _BoardState extends ConsumerState<BoardScreen> {
                     const SizedBox(width: 44),
                     Expanded(
                       child: Text(
-                        'ARMADA · STATUS',
+                        'ARMADA · PRAMUDI',
                         style: TextStyle(
                           fontFamily: HedgeTokens.cyberFont,
                           fontSize: 9.5,
@@ -253,8 +253,9 @@ class _BoardState extends ConsumerState<BoardScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 6),
                     SizedBox(
-                      width: 68,
+                      width: 80,
                       child: Text(
                         'HITUNG MUNDUR',
                         textAlign: TextAlign.right,
@@ -336,9 +337,19 @@ class CyberBoardTimelineTile extends StatelessWidget {
         final statusColor = due
             ? p.amberInk
             : (imminent ? p.amberInk : (isFocused ? p.cyanInk : p.muted));
+        final hasDriver = departure.driverName != null &&
+            departure.driverName!.trim().isNotEmpty;
+        final driverDisplayName =
+            hasDriver ? departure.driverName!.trim() : null;
         final statusText = due
             ? 'BOARDING'
-            : (imminent ? 'BERSIAP' : (isFocused ? 'AKTIF' : 'STANDBY'));
+            : (imminent
+                ? 'BERSIAP'
+                : (isFocused
+                    ? (driverDisplayName != null
+                        ? 'AKTIF · $driverDisplayName'
+                        : 'AKTIF')
+                    : (driverDisplayName ?? 'STANDBY')));
 
         return RepaintBoundary(
           child: Padding(
@@ -349,7 +360,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                 children: [
                   // Kolom Waktu Rencana & Rute (Kiri Rel)
                   SizedBox(
-                    width: 58,
+                    width: 60,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -371,7 +382,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 2),
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
@@ -469,6 +480,15 @@ class CyberBoardTimelineTile extends StatelessWidget {
                                           ),
                                         ),
                                         const SizedBox(width: 4),
+                                      ] else if (hasDriver) ...[
+                                        Icon(
+                                          Icons.person_rounded,
+                                          size: 11,
+                                          color: isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : p.muted,
+                                        ),
+                                        const SizedBox(width: 3.5),
                                       ],
                                       Text(
                                         statusText,
@@ -522,66 +542,41 @@ class CyberBoardTimelineTile extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
 
-                          // Nomor Unit Raksasa & Nama Pramudi
-                          Row(
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  departure.unitNumber,
-                                  style: TextStyle(
-                                    fontFamily: HedgeTokens.cyberFont,
-                                    fontSize: 26,
-                                    height: 1.1,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                    color: isDark ? Colors.white : p.text,
-                                    fontFeatures: HedgeTokens.numberFeatures,
-                                    shadows: (isFocused && isDark)
-                                        ? [
-                                            Shadow(
-                                              color: p.cyanInk.withValues(alpha: 0.5),
-                                              blurRadius: 10,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                ),
+                          // Nomor Unit Raksasa
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              departure.unitNumber,
+                              style: TextStyle(
+                                fontFamily: HedgeTokens.cyberFont,
+                                fontSize: 24,
+                                height: 1.15,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                                color: isDark ? Colors.white : p.text,
+                                fontFeatures: HedgeTokens.numberFeatures,
+                                shadows: (isFocused && isDark)
+                                    ? [
+                                        Shadow(
+                                          color: p.cyanInk.withValues(alpha: 0.5),
+                                          blurRadius: 10,
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                              if (departure.driverName != null && departure.driverName!.isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF0F172A) : p.raised,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: p.cyanInk.withValues(alpha: 0.4),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    departure.driverName!,
-                                    style: TextStyle(
-                                      fontFamily: HedgeTokens.cyberFont,
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark ? Colors.white : p.text,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
 
+                  const SizedBox(width: 6),
+
                   // Kolom Kanan: Countdown Timer Kiosk
                   SizedBox(
-                    width: 68,
+                    width: 80,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -609,7 +604,7 @@ class CyberBoardTimelineTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 2),
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,

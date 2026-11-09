@@ -117,6 +117,56 @@ class _DepartureFocusPanelState extends State<DepartureFocusPanel>
                 ),
                 const SizedBox(height: 8),
 
+                if (widget.focus.departure.driverName != null &&
+                    widget.focus.departure.driverName!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : p.focusSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: accent.withValues(alpha: isDark ? 0.45 : 0.55),
+                        width: 1.2,
+                      ),
+                      boxShadow: isDark
+                          ? [
+                              BoxShadow(
+                                color: accent.withValues(alpha: 0.25 * pulse),
+                                blurRadius: 8,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_rounded,
+                          size: widget.large ? 16 : 14,
+                          color: accent,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.focus.departure.driverName!.trim(),
+                          key: const ValueKey('focus-driver-name'),
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: widget.large ? 15 : 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: isDark ? Colors.white : p.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
                 // Centerpiece Circular Countdown HUD Gauge
                 CountdownIndicator(
                   at: plannedInstant(

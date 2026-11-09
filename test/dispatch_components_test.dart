@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedge_flutter/application/workspace_controller.dart';
+import 'package:hedge_flutter/domain/models.dart';
 import 'package:hedge_flutter/ui/design_system.dart';
 import 'package:hedge_flutter/ui/dispatch_components.dart';
 
@@ -76,6 +77,41 @@ void main() {
     );
 
     expect(find.text('WAKTU BERANGKAT'), findsOneWidget);
+  });
+
+  testWidgets('DepartureFocusPanel renders driver name when driverName is present', (
+    tester,
+  ) async {
+    final depWithDriver = Departure(
+      id: departure.id,
+      ordinal: departure.ordinal,
+      unitId: departure.unitId,
+      unitNumber: departure.unitNumber,
+      minute: departure.minute,
+      round: departure.round,
+      peak: departure.peak,
+      nextGap: departure.nextGap,
+      driverName: 'Syarifudin',
+    );
+    final focus = (
+      route: route,
+      revision: revision,
+      departure: depWithDriver,
+      due: false,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [clockProvider.overrideWith((ref) => Stream.value(now))],
+        child: MaterialApp(
+          theme: hedgeTheme(Brightness.dark),
+          home: Scaffold(body: DepartureFocusPanel(focus: focus)),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('focus-driver-name')), findsOneWidget);
+    expect(find.text('Syarifudin'), findsOneWidget);
   });
 
   testWidgets('showDepartureUndoSnackBar renders themed content, close button, and undo button', (
