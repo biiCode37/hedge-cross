@@ -13,14 +13,24 @@ abstract interface class CloudSyncClient {
 
 class FirestoreCloudSyncClient implements CloudSyncClient {
   FirestoreCloudSyncClient({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+      : _injectedFirestore = firestore;
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _injectedFirestore;
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return _injectedFirestore ?? FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since) async {
+    final db = _firestore;
+    if (db == null) return const [];
     try {
-      Query<Map<String, dynamic>> query = _firestore.collection('routes');
+      Query<Map<String, dynamic>> query = db.collection('routes');
       if (since != null) {
         query = query.where('updated_at', isGreaterThan: since.toUtc().toIso8601String());
       }
@@ -39,10 +49,12 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
   @override
   Future<void> pushOutbox(List<Map<String, dynamic>> items) async {
     if (items.isEmpty) return;
+    final db = _firestore;
+    if (db == null) return;
     try {
-      final batch = _firestore.batch();
+      final batch = db.batch();
       for (final item in items) {
-        final docRef = _firestore.collection('outbox').doc();
+        final docRef = db.collection('outbox').doc();
         final payload = Map<String, dynamic>.from(item);
         payload['synced_at'] = FieldValue.serverTimestamp();
         batch.set(docRef, payload);
@@ -57,6 +69,8 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
   @override
   Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
     if (drivers.isEmpty) return;
+    final db = _firestore;
+    if (db == null) return;
     try {
       String routeDocId = routeIdentifier;
       final isUuid = RegExp(
@@ -69,7 +83,7 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
             : (routeIdentifier.contains('-')
                 ? routeIdentifier.split('-').first.trim()
                 : routeIdentifier.trim());
-        final snapshot = await _firestore
+        final snapshot = await db
             .collection('routes')
             .where('route_code', isEqualTo: code)
             .limit(1)
@@ -96,7 +110,7 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
         };
       }).toList();
 
-      await _firestore.collection('routes').doc(routeDocId).set({
+      await db.collection('routes').doc(routeDocId).set({
         'drivers': payload,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, SetOptions(merge: true));
@@ -108,6 +122,8 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
 
   @override
   Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {
+    final db = _firestore;
+    if (db == null) return;
     try {
       String routeDocId = routeIdentifier;
       final isUuid = RegExp(
@@ -116,14 +132,14 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
 
       DocumentSnapshot<Map<String, dynamic>>? doc;
       if (isUuid) {
-        doc = await _firestore.collection('routes').doc(routeDocId).get();
+        doc = await db.collection('routes').doc(routeDocId).get();
       } else {
         final code = routeIdentifier.contains('—')
             ? routeIdentifier.split('—').first.trim()
             : (routeIdentifier.contains('-')
                 ? routeIdentifier.split('-').first.trim()
                 : routeIdentifier.trim());
-        final snapshot = await _firestore
+        final snapshot = await db
             .collection('routes')
             .where('route_code', isEqualTo: code)
             .limit(1)
@@ -145,7 +161,7 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
           return !idMatch && !callNameMatch;
         }).toList();
 
-        await _firestore.collection('routes').doc(routeDocId).set({
+        await db.collection('routes').doc(routeDocId).set({
           'drivers': filtered,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         }, SetOptions(merge: true));

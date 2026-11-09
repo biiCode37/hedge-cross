@@ -114,8 +114,8 @@ class FirebaseAuthService implements AuthService {
     GoogleSignIn? googleSignIn,
     String? serverClientId = '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
   })  : _storage = storage,
-        _auth = auth ?? fb_auth.FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
+        _injectedAuth = auth,
+        _injectedFirestore = firestore,
         _googleSignIn = googleSignIn ??
             GoogleSignIn(
               scopes: const ['email', 'profile'],
@@ -123,9 +123,25 @@ class FirebaseAuthService implements AuthService {
             );
 
   final SessionStorage _storage;
-  final fb_auth.FirebaseAuth _auth;
-  final FirebaseFirestore _firestore;
+  final fb_auth.FirebaseAuth? _injectedAuth;
+  final FirebaseFirestore? _injectedFirestore;
   final GoogleSignIn _googleSignIn;
+
+  fb_auth.FirebaseAuth? get _auth {
+    try {
+      return _injectedAuth ?? fb_auth.FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return _injectedFirestore ?? FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<AuthSessionState> restoreSession() async {
@@ -141,13 +157,15 @@ class FirebaseAuthService implements AuthService {
         } catch (_) {}
       }
 
-      // 2. Jika online, sinkronkan verifikasi whitelist ke Cloud Firestore
-      final currentFirebaseUser = _auth.currentUser;
+      // 2. Jika online dan Firebase terinisialisasi, sinkronkan verifikasi whitelist ke Cloud Firestore
+      final authClient = _auth;
+      final currentFirebaseUser = authClient?.currentUser;
       final email = currentFirebaseUser?.email ?? localUser?.email;
+      final firestoreClient = _firestore;
 
-      if (email != null && email.isNotEmpty) {
+      if (email != null && email.isNotEmpty && firestoreClient != null) {
         try {
-          final doc = await _firestore
+          final doc = await firestoreClient
               .collection('authorized_dispatchers')
               .doc(email.trim().toLowerCase())
               .get();
@@ -199,77 +217,84 @@ class FirebaseAuthService implements AuthService {
       }
 
       fb_auth.UserCredential? userCredential;
-      try {
-        final credential = fb_auth.GoogleAuthProvider.credential(
-          idToken: idToken,
-          accessToken: accessToken,
-        );
-        userCredential = await _auth.signInWithCredential(credential);
-      } catch (authError) {
-        debugPrint('Catatan auth Firebase: $authError');
+      final authClient = _auth;
+      if (authClient != null) {
+        try {
+          final credential = fb_auth.GoogleAuthProvider.credential(
+            idToken: idToken,
+            accessToken: accessToken,
+          );
+          userCredential = await authClient.signInWithCredential(credential);
+        } catch (authError) {
+          debugPrint('Catatan auth Firebase: $authError');
+        }
       }
 
       final email = googleUser.email.trim().toLowerCase();
       final name = googleUser.displayName?.trim() ?? 'Petugas';
+      final firestoreClient = _firestore;
 
-      // Periksa email di koleksi authorized_dispatchers
-      final doc = await _firestore
-          .collection('authorized_dispatchers')
-          .doc(email)
-          .get();
+      if (firestoreClient != null) {
+        final doc = await firestoreClient
+            .collection('authorized_dispatchers')
+            .doc(email)
+            .get();
 
-      if (doc.exists && doc.data() != null) {
-        final data = Map<String, dynamic>.from(doc.data()!);
-        final dispatcher = AuthorizedDispatcher.fromJson(data);
-        if (dispatcher.isAuthorized) {
-          await _storage.write(jsonEncode(dispatcher.toJson()));
-          final token = await userCredential?.user?.getIdToken();
-          return AuthSessionState(
-            user: dispatcher,
-            token: token,
+        if (doc.exists && doc.data() != null) {
+          final data = Map<String, dynamic>.from(doc.data()!);
+          final dispatcher = AuthorizedDispatcher.fromJson(data);
+          if (dispatcher.isAuthorized) {
+            await _storage.write(jsonEncode(dispatcher.toJson()));
+            final token = await userCredential?.user?.getIdToken();
+            return AuthSessionState(
+              user: dispatcher,
+              token: token,
+            );
+          } else if (dispatcher.isBlocked) {
+            return AuthSessionState(
+              user: dispatcher,
+              error: 'Akun Anda (${dispatcher.email}) dinonaktifkan oleh administrator.',
+            );
+          } else {
+            return AuthSessionState(user: dispatcher);
+          }
+        }
+
+        // Jika belum terdaftar, buat akun baru berstatus 'pending'
+        try {
+          final newUserData = {
+            'id': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            'uuid': userCredential?.user?.uid ?? '',
+            'email': email,
+            'name': name,
+            'role': 'pdo',
+            'status': 'pending',
+            'is_authorized': false,
+            'created_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          };
+
+          await firestoreClient
+              .collection('authorized_dispatchers')
+              .doc(email)
+              .set(newUserData, SetOptions(merge: true));
+
+          final pendingUser = AuthorizedDispatcher.fromJson(newUserData);
+          return AuthSessionState(user: pendingUser);
+        } catch (_) {
+          final fallbackPending = AuthorizedDispatcher(
+            id: 0,
+            uuid: '',
+            email: email,
+            name: name,
+            role: UserRole.pdo,
+            status: AccountStatus.pending,
           );
-        } else if (dispatcher.isBlocked) {
-          return AuthSessionState(
-            user: dispatcher,
-            error: 'Akun Anda (${dispatcher.email}) dinonaktifkan oleh administrator.',
-          );
-        } else {
-          return AuthSessionState(user: dispatcher);
+          return AuthSessionState(user: fallbackPending);
         }
       }
 
-      // Jika belum terdaftar, buat akun baru berstatus 'pending'
-      try {
-        final newUserData = {
-          'id': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          'uuid': userCredential?.user?.uid ?? '',
-          'email': email,
-          'name': name,
-          'role': 'pdo',
-          'status': 'pending',
-          'is_authorized': false,
-          'created_at': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        };
-
-        await _firestore
-            .collection('authorized_dispatchers')
-            .doc(email)
-            .set(newUserData, SetOptions(merge: true));
-
-        final pendingUser = AuthorizedDispatcher.fromJson(newUserData);
-        return AuthSessionState(user: pendingUser);
-      } catch (_) {
-        final fallbackPending = AuthorizedDispatcher(
-          id: 0,
-          uuid: '',
-          email: email,
-          name: name,
-          role: UserRole.pdo,
-          status: AccountStatus.pending,
-        );
-        return AuthSessionState(user: fallbackPending);
-      }
+      return const AuthSessionState(error: 'Layanan database tidak tersedia.');
     } catch (e) {
       return AuthSessionState(error: 'Gagal masuk dengan Google: $e');
     }
@@ -280,6 +305,11 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String name,
   }) async {
+    final firestoreClient = _firestore;
+    if (firestoreClient == null) {
+      return const AuthSessionState(error: 'Layanan database belum aktif.');
+    }
+
     try {
       final cleanEmail = email.trim().toLowerCase();
       final data = {
@@ -294,7 +324,7 @@ class FirebaseAuthService implements AuthService {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
-      await _firestore
+      await firestoreClient
           .collection('authorized_dispatchers')
           .doc(cleanEmail)
           .set(data, SetOptions(merge: true));
@@ -309,9 +339,12 @@ class FirebaseAuthService implements AuthService {
   @override
   Future<void> logout() async {
     await _storage.clear();
-    try {
-      await _auth.signOut();
-    } catch (_) {}
+    final authClient = _auth;
+    if (authClient != null) {
+      try {
+        await authClient.signOut();
+      } catch (_) {}
+    }
     try {
       await _googleSignIn.signOut();
     } catch (_) {}

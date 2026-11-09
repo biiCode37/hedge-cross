@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
-  return SupabaseAuthService(
+  return FirebaseAuthService(
     storage: SharedPreferencesSessionStorage(),
     serverClientId: '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
   );

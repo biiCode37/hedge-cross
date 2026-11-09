@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'application/workspace_controller.dart';
 import 'application/notification_service.dart';
 import 'data/workspace_repository.dart';
@@ -12,12 +12,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     try {
-      await Supabase.initialize(
-        url: 'https://mkffwfvaxuqifflpeaib.supabase.co',
-        publishableKey: 'sb_publishable_g0BlvGNUb-uK98bvgc0gmQ_ahCSH3xD',
-      );
+      await Firebase.initializeApp();
     } catch (e) {
-      debugPrint('Catatan inisialisasi Supabase (offline fallback aktif): $e');
+      debugPrint('Catatan inisialisasi Firebase (offline fallback aktif): $e');
     }
 
     final repository = await LocalWorkspaceRepository.open();

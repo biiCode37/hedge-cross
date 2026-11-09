@@ -13,6 +13,9 @@ final repositoryProvider = Provider<WorkspaceRepository>(
 final initialWorkspaceProvider = Provider<Workspace>(
   (ref) => throw StateError('Workspace belum dimuat.'),
 );
+final cloudSyncClientProvider = Provider<CloudSyncClient>(
+  (ref) => FirestoreCloudSyncClient(),
+);
 final clockProvider = StreamProvider<DateTime>((ref) async* {
   yield DateTime.now();
   yield* Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
@@ -263,7 +266,7 @@ class WorkspaceController extends Notifier<AppState> {
 
   void _syncDriverCloud(HedgeRoute route, List<Driver> drivers) {
     try {
-      final client = SupabaseCloudSyncClient();
+      final client = ref.read(cloudSyncClientProvider);
       client.pushDrivers(route.id, drivers).catchError((e) {
         debugPrint('Catatan sync driver ke cloud (offline fallback): $e');
       });
@@ -272,7 +275,7 @@ class WorkspaceController extends Notifier<AppState> {
 
   void _deleteDriverCloud(HedgeRoute route, String driverCallNameOrId) {
     try {
-      final client = SupabaseCloudSyncClient();
+      final client = ref.read(cloudSyncClientProvider);
       client.deleteDriverCloud(route.id, driverCallNameOrId).catchError((e) {
         debugPrint('Catatan delete driver di cloud (offline fallback): $e');
       });
@@ -281,7 +284,7 @@ class WorkspaceController extends Notifier<AppState> {
 
   Future<bool> syncDriversToCloud(HedgeRoute route) async {
     try {
-      final client = SupabaseCloudSyncClient();
+      final client = ref.read(cloudSyncClientProvider);
       await client.pushDrivers(route.id, route.drivers);
       return true;
     } catch (e) {
