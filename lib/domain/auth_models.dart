@@ -65,15 +65,19 @@ class AuthorizedDispatcher {
   bool get isAdmin => role == UserRole.admin || role == UserRole.superadmin;
 
   factory AuthorizedDispatcher.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    final parsedId = rawId is num
+        ? rawId.toInt()
+        : (int.tryParse(rawId?.toString() ?? '') ?? 0);
     return AuthorizedDispatcher(
-      id: (json['id'] as num).toInt(),
-      uuid: json['uuid'] as String,
-      email: json['email'] as String,
-      name: json['name'] as String,
+      id: parsedId,
+      uuid: (json['uuid'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
       role: UserRole.fromString(json['role'] as String? ?? 'pdo'),
       status: AccountStatus.fromString(json['status'] as String? ?? 'pending'),
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'] as String) : null,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
     );
   }
 

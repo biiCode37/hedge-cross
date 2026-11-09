@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/auth_models.dart';
 
 abstract interface class SessionStorage {
@@ -90,17 +92,229 @@ class LocalSessionAuthService implements AuthService {
 
   @override
   Future<AuthSessionState> signInWithGoogle() async {
-    throw UnimplementedError('Gunakan implementasi SupabaseAuthService untuk live Google Sign-In.');
+    throw UnimplementedError('Gunakan implementasi FirebaseAuthService untuk live Google Sign-In.');
   }
 
   @override
   Future<AuthSessionState> requestAccess({required String email, required String name}) async {
-    throw UnimplementedError('Gunakan implementasi SupabaseAuthService untuk request access.');
+    throw UnimplementedError('Gunakan implementasi FirebaseAuthService untuk request access.');
   }
 
   @override
   Future<void> logout() async {
     await _storage.clear();
+  }
+}
+
+class FirebaseAuthService implements AuthService {
+  FirebaseAuthService({
+    required SessionStorage storage,
+    fb_auth.FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+    GoogleSignIn? googleSignIn,
+    String? serverClientId = '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
+  })  : _storage = storage,
+        _auth = auth ?? fb_auth.FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              scopes: const ['email', 'profile'],
+              serverClientId: serverClientId,
+            );
+
+  final SessionStorage _storage;
+  final fb_auth.FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
+
+  @override
+  Future<AuthSessionState> restoreSession() async {
+    try {
+      // 1. Coba baca sesi lokal terlebih dahulu (Offline-First)
+      final raw = await _storage.read();
+      AuthorizedDispatcher? localUser;
+      if (raw != null && raw.isNotEmpty) {
+        try {
+          localUser = AuthorizedDispatcher.fromJson(
+            jsonDecode(raw) as Map<String, dynamic>,
+          );
+        } catch (_) {}
+      }
+
+      // 2. Jika online, sinkronkan verifikasi whitelist ke Cloud Firestore
+      final currentFirebaseUser = _auth.currentUser;
+      final email = currentFirebaseUser?.email ?? localUser?.email;
+
+      if (email != null && email.isNotEmpty) {
+        try {
+          final doc = await _firestore
+              .collection('authorized_dispatchers')
+              .doc(email.trim().toLowerCase())
+              .get();
+
+          if (doc.exists && doc.data() != null) {
+            final data = Map<String, dynamic>.from(doc.data()!);
+            final freshUser = AuthorizedDispatcher.fromJson(data);
+            if (freshUser.isAuthorized) {
+              await _storage.write(jsonEncode(freshUser.toJson()));
+            } else {
+              await _storage.clear();
+            }
+            final token = await currentFirebaseUser?.getIdToken();
+            return AuthSessionState(
+              user: freshUser,
+              token: token,
+            );
+          }
+        } catch (e) {
+          debugPrint('Gagal sync status whitelist online Firestore, memakai sesi lokal: $e');
+        }
+      }
+
+      // 3. Fallback ke sesi lokal jika offline
+      if (localUser != null) {
+        return AuthSessionState(user: localUser);
+      }
+
+      return const AuthSessionState();
+    } catch (e) {
+      return AuthSessionState(error: e.toString());
+    }
+  }
+
+  @override
+  Future<AuthSessionState> signInWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return const AuthSessionState(error: 'Masuk dengan Google dibatalkan.');
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
+
+      if (idToken == null && accessToken == null) {
+        return const AuthSessionState(error: 'Gagal mendapatkan token autentikasi Google.');
+      }
+
+      fb_auth.UserCredential? userCredential;
+      try {
+        final credential = fb_auth.GoogleAuthProvider.credential(
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+        userCredential = await _auth.signInWithCredential(credential);
+      } catch (authError) {
+        debugPrint('Catatan auth Firebase: $authError');
+      }
+
+      final email = googleUser.email.trim().toLowerCase();
+      final name = googleUser.displayName?.trim() ?? 'Petugas';
+
+      // Periksa email di koleksi authorized_dispatchers
+      final doc = await _firestore
+          .collection('authorized_dispatchers')
+          .doc(email)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = Map<String, dynamic>.from(doc.data()!);
+        final dispatcher = AuthorizedDispatcher.fromJson(data);
+        if (dispatcher.isAuthorized) {
+          await _storage.write(jsonEncode(dispatcher.toJson()));
+          final token = await userCredential?.user?.getIdToken();
+          return AuthSessionState(
+            user: dispatcher,
+            token: token,
+          );
+        } else if (dispatcher.isBlocked) {
+          return AuthSessionState(
+            user: dispatcher,
+            error: 'Akun Anda (${dispatcher.email}) dinonaktifkan oleh administrator.',
+          );
+        } else {
+          return AuthSessionState(user: dispatcher);
+        }
+      }
+
+      // Jika belum terdaftar, buat akun baru berstatus 'pending'
+      try {
+        final newUserData = {
+          'id': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          'uuid': userCredential?.user?.uid ?? '',
+          'email': email,
+          'name': name,
+          'role': 'pdo',
+          'status': 'pending',
+          'is_authorized': false,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        };
+
+        await _firestore
+            .collection('authorized_dispatchers')
+            .doc(email)
+            .set(newUserData, SetOptions(merge: true));
+
+        final pendingUser = AuthorizedDispatcher.fromJson(newUserData);
+        return AuthSessionState(user: pendingUser);
+      } catch (_) {
+        final fallbackPending = AuthorizedDispatcher(
+          id: 0,
+          uuid: '',
+          email: email,
+          name: name,
+          role: UserRole.pdo,
+          status: AccountStatus.pending,
+        );
+        return AuthSessionState(user: fallbackPending);
+      }
+    } catch (e) {
+      return AuthSessionState(error: 'Gagal masuk dengan Google: $e');
+    }
+  }
+
+  @override
+  Future<AuthSessionState> requestAccess({
+    required String email,
+    required String name,
+  }) async {
+    try {
+      final cleanEmail = email.trim().toLowerCase();
+      final data = {
+        'id': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'uuid': '',
+        'email': cleanEmail,
+        'name': name.trim(),
+        'role': 'pdo',
+        'status': 'pending',
+        'is_authorized': false,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      await _firestore
+          .collection('authorized_dispatchers')
+          .doc(cleanEmail)
+          .set(data, SetOptions(merge: true));
+
+      final user = AuthorizedDispatcher.fromJson(data);
+      return AuthSessionState(user: user);
+    } catch (e) {
+      return AuthSessionState(error: 'Gagal mengajukan permohonan akses: $e');
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    await _storage.clear();
+    try {
+      await _auth.signOut();
+    } catch (_) {}
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
   }
 }
 

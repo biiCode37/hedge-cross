@@ -31,6 +31,27 @@ void main() {
       expect(serialized['status'], 'active');
     });
 
+    test('parses string id and string dates gracefully from Firestore document format', () {
+      final firestoreDoc = {
+        'id': '101',
+        'uuid': 'uuid-firestore',
+        'email': 'biicode37@gmail.com',
+        'name': 'BiiDev',
+        'role': 'superadmin',
+        'status': 'active',
+        'created_at': '2026-10-13 12:35:16.006467+00',
+        'updated_at': '2026-10-13 12:35:16.006467+00',
+      };
+
+      final user = AuthorizedDispatcher.fromJson(firestoreDoc);
+
+      expect(user.id, 101);
+      expect(user.uuid, 'uuid-firestore');
+      expect(user.email, 'biicode37@gmail.com');
+      expect(user.isAdmin, isTrue);
+      expect(user.isAuthorized, isTrue);
+    });
+
     test('isAuthorized only returns true when status is active', () {
       const pending = AuthorizedDispatcher(
         id: 2,
