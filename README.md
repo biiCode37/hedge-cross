@@ -2,11 +2,11 @@
 
 By Mikrotrans Utara. Migrasi native Android, iOS, dan Windows dari HEDGE web/PWA.
 
-Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru **2.1.8+21 / 2.1.8** memuat integrasi backend cloud **Google Firebase (Cloud Firestore & Firebase Auth)** yang anti-sleep 24/7 dan 100% gratis permanen. Paket APK release terbaru dibangun pada 2026-11-09 setelah perintah eksplisit user. Lihat [paket dan bukti build terbaru](docs/build-2.1.8-2026-11-09.md).
+Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru **2.1.9+22 / 2.1.9** memuat penyempurnaan sinkronisasi master pramudi total ke backend cloud **Google Firebase (Cloud Firestore & Firebase Auth)** serta fitur pencarian supir pada setiap kartu unit armada. Paket APK release terbaru dibangun pada 2026-11-09 setelah perintah eksplisit user. Lihat [paket dan bukti build terbaru](docs/build-2.1.9-2026-11-09.md).
 
 ## Mulai Menggunakan
 
-Android adalah target utama di lapangan. Paket APK siap instalasi tersedia di [`apks/v2.1.8/hedge-v2.1.8.apk`](apks/v2.1.8/hedge-v2.1.8.apk) (sekitar 70.9 MB, SHA-256 terverifikasi di dokumen build). Pasang APK langsung ke smartphone dispatcher Android.
+Android adalah target utama di lapangan. Paket APK siap instalasi tersedia di [`apks/v2.1.9/hedge-v2.1.9.apk`](apks/v2.1.9/hedge-v2.1.9.apk) (sekitar 71.0 MB, SHA-256 terverifikasi di dokumen build). Pasang APK langsung ke smartphone dispatcher Android.
 
 Data awal mencakup 18 rute resmi Mikrotrans Jakarta Utara (JAK.01 s.d. JAK.120) dengan 586 armada unit dan data pramudi riil yang tersinkronisasi otomatis via Cloud Firestore. Tanggal dan jam jadwal menggunakan Asia/Jakarta (WIB), terlepas dari zona waktu komputer/perangkat.
 
