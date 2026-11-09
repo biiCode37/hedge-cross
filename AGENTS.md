@@ -84,13 +84,17 @@ Setiap folder sesi temuan wajib memuat **4 file inti**:
 
 ---
 
-## 7. Aturan Penggunaan Proyek Supabase HEDGE (`hedge-cross`) (WAJIB)
+## 7. Aturan Penggunaan Backend Cloud Firebase HEDGE (`hedge-mikrotrans`) (WAJIB)
 
-- **Target Proyek Supabase Eksklusif:**
-  - Saat menggunakan **Supabase MCP tools** (`execute_sql`, `apply_migration`, `list_tables`, `get_publishable_keys`, dsb.) ketika bekerja di repositori ini, agen **WAJIB HANYA MENGGUNAKAN** proyek Supabase **`hedge-cross`**:
-    - **Project Name:** `hedge-cross`
-    - **Project ID:** `mkffwfvaxuqifflpeaib`
-    - **Project URL:** `https://mkffwfvaxuqifflpeaib.supabase.co`
+- **Target Proyek Cloud Definitif:**
+  - Backend cloud HEDGE resmi menggunakan **Google Firebase (Spark Plan - Permanen Gratis)**:
+    - **Project Name:** `HEDGE Mikrotrans`
+    - **Project ID:** `hedge-mikrotrans`
+    - **Project Number:** `817255308741`
+    - **Region:** `asia-southeast2` (Jakarta)
+    - **Layanan Aktif:** Cloud Firestore (Native Mode), Firebase Authentication (Google Sign-In)
+    - **MCP Connector:** `firebase-mcp-server`
+- **Status Proyek Supabase (`hedge-cross`):**
+  - Proyek Supabase lama (`mkffwfvaxuqifflpeaib`) telah **dinonaktifkan** dan seluruh data masternya (dispatcher, rute, unit, supir) telah dimigrasikan secara utuh ke Cloud Firestore `hedge-mikrotrans`.
 - **LARANGAN KERAS:**
-  - Agen **DILARANG KERAS** menjalankan migrasi, query DDL, atau operasi data apa pun ke proyek Supabase milik aplikasi lain (seperti `ss-pdo` / `sejttnsanzogsykmtwym` atau proyek lainnya).
-  - Setiap kali memanggil tool Supabase MCP, selalu pastikan parameter `project_id` bernilai `'mkffwfvaxuqifflpeaib'`.
+  - Agen **DILARANG KERAS** menjalankan migrasi, modifikasi schema, atau operasi data ke proyek Firebase atau database cloud lain di luar `hedge-mikrotrans`.
