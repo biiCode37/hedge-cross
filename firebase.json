@@ -4,5 +4,14 @@
     "location": "asia-southeast2",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "HEDGE Mikrotrans",
+        "supportEmail": "biicode37@gmail.com"
+      }
+    }
   }
 }
