@@ -131,6 +131,52 @@ void main() {
       expect(u540.driverShift2Id, 'd-uuid-2');
     });
 
+    test('parses nested Firestore document format with drivers and units collections directly', () {
+      final firestoreRoutes = [
+        {
+          'uuid': 'd2c14c0e-0bfe-42a5-b7da-8f40fa212e8a',
+          'route_code': 'JAK.115',
+          'route_name': 'TERM.TANJUNG PRIOK - PEGANGSAAN II IGI',
+          'color': 4294940672,
+          'position': 1,
+          'config': {
+            'start': '05:00',
+            'end': '22:00',
+            'headwayPeak': 5,
+            'headwayNormal': 10,
+          },
+          'units': [
+            {'number': 'KWK 222157', 'position': 0, 'active': true},
+          ],
+          'drivers': [
+            {
+              'uuid': '572b68a5-c71e-4b94-9d1e-7687107778dd',
+              'full_name': 'Mansyur',
+              'call_name': 'Mansur',
+              'status': 'tetap',
+              'default_unit_number': 'KWK 222157',
+              'default_shift': 1,
+              'active': true,
+            },
+          ],
+        }
+      ];
+
+      final routes = mergeCloudRoutesIntoLocal(
+        currentRoutes: const [],
+        cloudRoutes: firestoreRoutes,
+        now: DateTime.utc(2026, 11, 9, 8, 0),
+      );
+
+      expect(routes.length, 1);
+      final r = routes.first;
+      expect(r.id, 'd2c14c0e-0bfe-42a5-b7da-8f40fa212e8a');
+      expect(r.drivers.length, 1);
+      expect(r.drivers.first.callName, 'Mansur');
+      expect(r.units.first.number, 'KWK 222157');
+      expect(r.units.first.driverShift1Id, '572b68a5-c71e-4b94-9d1e-7687107778dd');
+    });
+
     test('preserves existing custom driver assignments on units when updating route', () {
       final existingRoute = HedgeRoute(
         id: 'route-uuid-1',
@@ -182,5 +228,3 @@ void main() {
     });
   });
 }
-
-

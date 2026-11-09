@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/models.dart';
 import '../domain/scheduler.dart';
 
@@ -8,6 +9,151 @@ abstract interface class CloudSyncClient {
   Future<void> pushOutbox(List<Map<String, dynamic>> items);
   Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers);
   Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId);
+}
+
+class FirestoreCloudSyncClient implements CloudSyncClient {
+  FirestoreCloudSyncClient({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+
+  @override
+  Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore.collection('routes');
+      if (since != null) {
+        query = query.where('updated_at', isGreaterThan: since.toUtc().toIso8601String());
+      }
+      final snapshot = await query.orderBy('position').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['uuid'] ??= doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('FirestoreCloudSyncClient pullRoutes error: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> pushOutbox(List<Map<String, dynamic>> items) async {
+    if (items.isEmpty) return;
+    try {
+      final batch = _firestore.batch();
+      for (final item in items) {
+        final docRef = _firestore.collection('outbox').doc();
+        final payload = Map<String, dynamic>.from(item);
+        payload['synced_at'] = FieldValue.serverTimestamp();
+        batch.set(docRef, payload);
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('FirestoreCloudSyncClient pushOutbox error: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
+    if (drivers.isEmpty) return;
+    try {
+      String routeDocId = routeIdentifier;
+      final isUuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(routeIdentifier);
+
+      if (!isUuid) {
+        final code = routeIdentifier.contains('—')
+            ? routeIdentifier.split('—').first.trim()
+            : (routeIdentifier.contains('-')
+                ? routeIdentifier.split('-').first.trim()
+                : routeIdentifier.trim());
+        final snapshot = await _firestore
+            .collection('routes')
+            .where('route_code', isEqualTo: code)
+            .limit(1)
+            .get();
+        if (snapshot.docs.isNotEmpty) {
+          routeDocId = snapshot.docs.first.id;
+        } else {
+          debugPrint('pushDrivers: Route document tidak ditemukan untuk $routeIdentifier');
+          return;
+        }
+      }
+
+      final payload = drivers.map((d) {
+        return <String, dynamic>{
+          'id': d.id,
+          'uuid': d.id,
+          'route_uuid': routeDocId,
+          'full_name': d.fullName,
+          'call_name': d.callName,
+          'status': d.status == DriverStatus.cadangan ? 'cadangan' : 'tetap',
+          'default_unit_number': d.defaultUnitNumber,
+          'default_shift': d.defaultShift,
+          'active': d.active,
+        };
+      }).toList();
+
+      await _firestore.collection('routes').doc(routeDocId).set({
+        'drivers': payload,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('FirestoreCloudSyncClient pushDrivers error: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {
+    try {
+      String routeDocId = routeIdentifier;
+      final isUuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(routeIdentifier);
+
+      DocumentSnapshot<Map<String, dynamic>>? doc;
+      if (isUuid) {
+        doc = await _firestore.collection('routes').doc(routeDocId).get();
+      } else {
+        final code = routeIdentifier.contains('—')
+            ? routeIdentifier.split('—').first.trim()
+            : (routeIdentifier.contains('-')
+                ? routeIdentifier.split('-').first.trim()
+                : routeIdentifier.trim());
+        final snapshot = await _firestore
+            .collection('routes')
+            .where('route_code', isEqualTo: code)
+            .limit(1)
+            .get();
+        if (snapshot.docs.isNotEmpty) {
+          doc = snapshot.docs.first;
+          routeDocId = doc.id;
+        }
+      }
+
+      if (doc != null && doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final rawDrivers = ((data['drivers'] ?? data['master_drivers']) as List? ?? <dynamic>[])
+            .cast<Map<String, dynamic>>();
+        final filtered = rawDrivers.where((d) {
+          final idMatch = d['id']?.toString() == driverCallNameOrId ||
+              d['uuid']?.toString() == driverCallNameOrId;
+          final callNameMatch = d['call_name']?.toString() == driverCallNameOrId;
+          return !idMatch && !callNameMatch;
+        }).toList();
+
+        await _firestore.collection('routes').doc(routeDocId).set({
+          'drivers': filtered,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint('FirestoreCloudSyncClient deleteDriverCloud error: $e');
+    }
+  }
 }
 
 class SupabaseCloudSyncClient implements CloudSyncClient {
@@ -156,7 +302,7 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
     final displayName = '$code — $name';
     final color = raw['color'] is int ? raw['color'] as int : 0xFFFF9800;
 
-    final rawDrivers = (raw['master_drivers'] as List? ?? <dynamic>[])
+    final rawDrivers = ((raw['drivers'] ?? raw['master_drivers']) as List? ?? <dynamic>[])
         .cast<Map<String, dynamic>>();
 
     final drivers = <Driver>[];
@@ -184,7 +330,7 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
       ));
     }
 
-    final rawUnits = (raw['master_units'] as List? ?? <dynamic>[])
+    final rawUnits = ((raw['units'] ?? raw['master_units']) as List? ?? <dynamic>[])
         .cast<Map<String, dynamic>>();
 
     // Sort by position
