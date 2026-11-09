@@ -20,11 +20,13 @@ class AlarmDeviceStatus {
     this.audioIssue = '',
     this.alarmVolume = 0,
     this.alarmVolumeMax = 0,
+    this.musicVolume = 0,
+    this.musicVolumeMax = 0,
     this.pending = 0,
   });
   final bool notifications, exact, fullScreen, overlay;
   final String speechStatus, voice, audioIssue;
-  final int alarmVolume, alarmVolumeMax;
+  final int alarmVolume, alarmVolumeMax, musicVolume, musicVolumeMax;
   final int pending;
 }
 
@@ -107,6 +109,8 @@ class NotificationService {
       audioIssue: map['audioIssue'] as String? ?? '',
       alarmVolume: map['alarmVolume'] as int? ?? 0,
       alarmVolumeMax: map['alarmVolumeMax'] as int? ?? 0,
+      musicVolume: map['musicVolume'] as int? ?? 0,
+      musicVolumeMax: map['musicVolumeMax'] as int? ?? 0,
       pending: map['pending'] as int? ?? 0,
     );
     final d = device.value;

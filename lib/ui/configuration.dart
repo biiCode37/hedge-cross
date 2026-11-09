@@ -964,7 +964,7 @@ class _ConfigurationSheetState extends State<ConfigurationSheet> {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  'Mengikuti volume Media/Speaker Android.',
+                                  'Saluran Alarm mandiri dengan auto-boost maksimal (bebas setel musik tanpa mempengaruhi suara TTS).',
                                   style: TextStyle(fontSize: 11, color: p.muted),
                                 ),
                                 value: sound,

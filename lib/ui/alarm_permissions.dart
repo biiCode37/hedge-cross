@@ -37,7 +37,14 @@ class AlarmPermissionPanel extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Volume Audio Android: ${d.alarmVolume}/${d.alarmVolumeMax}. HEDGE mengikuti volume Media/Speaker ini.',
+                    'Volume Alarm TTS: ${d.alarmVolume}/${d.alarmVolumeMax} (Saluran Alarm Mandiri, Terpisah dari Musik).',
+                  ),
+                ),
+              if (d.musicVolumeMax > 0)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Volume Media Musik: ${d.musicVolume}/${d.musicVolumeMax}.',
                   ),
                 ),
               if (d.alarmVolume == 0 && d.alarmVolumeMax > 0)
@@ -55,7 +62,7 @@ class AlarmPermissionPanel extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Volume Alarm Android sedang 0 (Hening). Besarkan volume audio perangkat lewat tombol samping HP atau Pengaturan volume Android.',
+                          'Volume Alarm Android sedang 0 (Hening). HEDGE otomatis mem-boost volume TTS ke level maksimal saat alarm berbunyi, atau Anda dapat membesarkan slider Volume Alarm Android.',
                           style: TextStyle(
                             color: context.hedge.amberInk,
                             fontSize: 12,

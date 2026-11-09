@@ -283,11 +283,13 @@ object AlarmEngine {
             it.id.startsWith("hedge_alarm_v4_") && it.importance < NotificationManager.IMPORTANCE_HIGH
         } else 0
         val audioManager = c.getSystemService(AudioManager::class.java)
-        val streamVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val streamVolMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val alarmVol = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        val musicVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val alarmVolMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+        val musicVolMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         return mapOf("overlay" to Settings.canDrawOverlays(c), "speechStatus" to (diagnostics(c).getString("speechStatus", "Belum diuji") ?: ""),
             "voice" to (diagnostics(c).getString("voice", "") ?: ""), "audioIssue" to (diagnostics(c).getString("issue", "") ?: ""),
-            "alarmVolume" to streamVol, "alarmVolumeMax" to streamVolMax,
+            "alarmVolume" to alarmVol, "alarmVolumeMax" to alarmVolMax, "musicVolume" to musicVol, "musicVolumeMax" to musicVolMax,
             "restrictedChannels" to restricted, "notifications" to manager(c).areNotificationsEnabled(), "exact" to canExact(c),
             "fullScreen" to canFullScreen(c), "pending" to plan(s).count {
                 it.key !in delivered && it.departureId !in completed && it.routeId !in disabled && it.at > System.currentTimeMillis()

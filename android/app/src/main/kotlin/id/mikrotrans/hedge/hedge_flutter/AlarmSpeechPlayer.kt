@@ -13,12 +13,12 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
 
-/** On-device speech and prompt chime routed to active media/Bluetooth output, avoiding dual-speaker echo. */
+/** On-device speech and prompt chime routed to dedicated alarm stream with auto-boost and ducking. */
 class AlarmSpeechPlayer(private val context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
     private val attributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        .setUsage(AudioAttributes.USAGE_ALARM)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
     private var engine: TextToSpeech? = null
     private var toneGen: ToneGenerator? = null
@@ -28,6 +28,29 @@ class AlarmSpeechPlayer(private val context: Context) {
     private var latest = emptyList<ActiveAlarm>()
     private val attempted = mutableSetOf<String>()
     private var retryAfter = 0L
+    private var previousAlarmVolume: Int? = null
+
+    private fun boostVolume() {
+        try {
+            val currentVol = audio.getStreamVolume(AudioManager.STREAM_ALARM)
+            val maxVol = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+            if (currentVol < maxVol) {
+                previousAlarmVolume = currentVol
+                audio.setStreamVolume(AudioManager.STREAM_ALARM, maxVol, 0)
+            }
+        } catch (_: Throwable) {
+            // Volume adjustment might be restricted on certain devices/modes
+        }
+    }
+
+    private fun restoreVolume() {
+        try {
+            previousAlarmVolume?.let { prev ->
+                audio.setStreamVolume(AudioManager.STREAM_ALARM, prev, 0)
+                previousAlarmVolume = null
+            }
+        } catch (_: Throwable) {}
+    }
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         handler.post {
             when (change) {
@@ -61,7 +84,7 @@ class AlarmSpeechPlayer(private val context: Context) {
     private fun playChime() {
         try {
             if (toneGen == null) {
-                toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                toneGen = ToneGenerator(AudioManager.STREAM_ALARM, 100)
             }
             toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
         } catch (_: Throwable) {
@@ -159,7 +182,7 @@ class AlarmSpeechPlayer(private val context: Context) {
         if (now < retryAfter) return
         val candidate = AlarmSpeechText.next(events, attempted + AlarmEngine.spoken(context), now) ?: return
         val granted = if (Build.VERSION.SDK_INT >= 26) audio.requestAudioFocus(focusRequest!!)
-            else audio.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            else @Suppress("DEPRECATION") audio.requestAudioFocus(focusListener, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
         if (granted != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             AlarmEngine.deliveryIssue(context, "Audio belum mendapat prioritas; volume mungkin terpengaruh audio lain.")
         }
@@ -168,12 +191,14 @@ class AlarmSpeechPlayer(private val context: Context) {
         current = candidate; attempted.add(candidate.event.key)
 
         // Immediate audible prompt chime so dispatcher always hears alert
+        // Boost STREAM_ALARM volume to maximum so dispatcher hears critical alert regardless of music volume
+        boostVolume()
         playChime()
 
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1f)
-            putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
-            putString(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC.toString())
+            putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_ALARM)
+            putString(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_ALARM.toString())
         }
         // Small delay to let prompt chime sound clearly before speech
         handler.postDelayed({
@@ -187,7 +212,7 @@ class AlarmSpeechPlayer(private val context: Context) {
 
     private fun finished(id: String, failed: Boolean) {
         if (closed || current?.event?.key != id) return
-        current = null; abandonFocus()
+        restoreVolume(); current = null; abandonFocus()
         if (failed) {
             attempted.remove(id)
             AlarmEngine.deliveryIssue(context, "Ucapan TTS gagal diputar. Gunakan Uji suara untuk memeriksa mesin TTS.")
@@ -196,10 +221,10 @@ class AlarmSpeechPlayer(private val context: Context) {
     }
 
     private fun abandonFocus() {
-        if (Build.VERSION.SDK_INT >= 26) audio.abandonAudioFocusRequest(focusRequest!!) else audio.abandonAudioFocus(focusListener)
+        if (Build.VERSION.SDK_INT >= 26) audio.abandonAudioFocusRequest(focusRequest!!) else @Suppress("DEPRECATION") audio.abandonAudioFocus(focusListener)
     }
 
-    private fun stopCurrent() { current = null; engine?.stop(); abandonFocus() }
+    private fun stopCurrent() { restoreVolume(); current = null; engine?.stop(); abandonFocus() }
 
     fun close() {
         closed = true; ready = false; latest = emptyList()
