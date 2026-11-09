@@ -31,6 +31,17 @@ class FakeCloudSyncClient implements CloudSyncClient {
   }
 
   @override
+  Future<int> pushAllDrivers(List<HedgeRoute> routes) async {
+    if (failNext) throw Exception('Push all drivers error');
+    int total = 0;
+    for (final r in routes) {
+      pushedDrivers.addAll(r.drivers);
+      total += r.drivers.length;
+    }
+    return total;
+  }
+
+  @override
   Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {
     if (failNext) throw Exception('Delete driver error');
     pushedDrivers.removeWhere((d) => d.id == driverCallNameOrId || d.callName == driverCallNameOrId);

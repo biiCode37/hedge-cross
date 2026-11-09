@@ -17,6 +17,7 @@ class DriverMasterSheet extends ConsumerStatefulWidget {
 class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
   String _filter = 'semua'; // 'semua', 'tetap', 'cadangan'
   String _searchQuery = '';
+  bool _isSyncing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -120,29 +121,94 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                       side: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                     ),
                   ),
-                  tooltip: 'Sinkronkan ke Cloud Supabase',
-                  onPressed: () async {
-                    final scaffold = ScaffoldMessenger.of(context);
-                    scaffold.showSnackBar(
-                      const SnackBar(
-                        content: Text('Menyinkronkan master pramudi ke Supabase Cloud...'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                    final ok = await ref.read(workspaceProvider.notifier).syncDriversToCloud(currentRoute);
-                    scaffold.hideCurrentSnackBar();
-                    scaffold.showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          ok
-                              ? '${currentRoute.drivers.length} pramudi berhasil disinkronkan ke Cloud.'
-                              : 'Gagal sinkronisasi ke cloud (periksa koneksi internet).',
-                        ),
-                        backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                  tooltip: 'Setorkan Semua Pramudi ke Cloud Firebase',
+                  onPressed: _isSyncing
+                      ? null
+                      : () async {
+                          setState(() => _isSyncing = true);
+                          try {
+                            final res = await ref
+                                .read(workspaceProvider.notifier)
+                                .syncAllDriversToCloud(currentRoute);
+                            if (!context.mounted) return;
+                            setState(() => _isSyncing = false);
+
+                            await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: isDark ? const Color(0xFF0C1017) : p.surface,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: res.success ? const Color(0xFF10B981) : Colors.redAccent,
+                                    width: 1.2,
+                                  ),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(
+                                      res.success ? Icons.cloud_done : Icons.cloud_off,
+                                      color: res.success ? const Color(0xFF10B981) : Colors.redAccent,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      res.success ? 'Sinkronisasi Berhasil' : 'Sinkronisasi Gagal',
+                                      style: TextStyle(
+                                        fontFamily: HedgeTokens.cyberFont,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: isDark ? Colors.white : p.text,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                content: Text(
+                                  res.success
+                                      ? 'Total ${res.totalDrivers} pramudi dari ${res.totalRoutes} rute berhasil disetorkan ke Cloud Firebase!'
+                                      : 'Gagal mengirim master pramudi ke Cloud:\n${res.error ?? "Periksa koneksi internet."}',
+                                  style: TextStyle(
+                                    fontFamily: HedgeTokens.cyberFont,
+                                    fontSize: 13,
+                                    color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                                  ),
+                                ),
+                                actions: [
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: res.success ? const Color(0xFF10B981) : Colors.redAccent,
+                                    ),
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            setState(() => _isSyncing = false);
+                            await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text('Terjadi kesalahan: $e'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                  icon: _isSyncing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                          ),
+                        )
+                      : const Icon(Icons.cloud_upload_outlined, size: 18),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(

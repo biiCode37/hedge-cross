@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedge_flutter/application/workspace_controller.dart';
+import 'package:hedge_flutter/data/sync_service.dart';
 import 'package:hedge_flutter/data/workspace_repository.dart';
 import 'package:hedge_flutter/domain/models.dart';
 
@@ -14,6 +15,27 @@ class MockWorkspaceRepository implements WorkspaceRepository {
   }
   @override
   Future<void> close() async {}
+}
+
+class MockCloudSyncClient implements CloudSyncClient {
+  final List<Driver> pushed = [];
+  @override
+  Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
+    pushed.addAll(drivers);
+  }
+  @override
+  Future<int> pushAllDrivers(List<HedgeRoute> routes) async {
+    for (final r in routes) {
+      pushed.addAll(r.drivers);
+    }
+    return pushed.length;
+  }
+  @override
+  Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {}
+  @override
+  Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since) async => [];
+  @override
+  Future<void> pushOutbox(List<Map<String, dynamic>> items) async {}
 }
 
 void main() {
@@ -145,6 +167,24 @@ void main() {
       final u2 = route.units.firstWhere((u) => u.id == 'u2');
       expect(u2.driverShift1Id, 'd3');
       expect(u2.driverShift2Id, 'd4');
+    });
+
+    test('syncAllDriversToCloud mengirim seluruh pramudi dari semua rute', () async {
+      final syncClient = MockCloudSyncClient();
+      final localContainer = ProviderContainer(
+        overrides: [
+          initialWorkspaceProvider.overrideWithValue(repo.stored!),
+          repositoryProvider.overrideWithValue(repo),
+          cloudSyncClientProvider.overrideWithValue(syncClient),
+        ],
+      );
+      final localController = localContainer.read(workspaceProvider.notifier);
+      final res = await localController.syncAllDriversToCloud(initialRoute);
+      expect(res.success, isTrue);
+      expect(res.totalDrivers, 5);
+      expect(res.totalRoutes, 1);
+      expect(syncClient.pushed.length, 5);
+      localContainer.dispose();
     });
   });
 }

@@ -947,100 +947,199 @@ class _HomeState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
 
     final selected = await showModalBottomSheet<String?>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF0C1017) : p.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
+        String searchQuery = '';
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filteredDrivers = route.drivers.where((d) {
+              if (searchQuery.trim().isEmpty) return true;
+              final q = searchQuery.toLowerCase().trim();
+              return d.callName.toLowerCase().contains(q) ||
+                  d.fullName.toLowerCase().contains(q);
+            }).toList();
+
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+              ),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      shift == 1 ? '☀️ Pilih Pramudi Pagi' : '🌙 Pilih Pramudi Siang',
-                      style: TextStyle(
-                        fontFamily: HedgeTokens.cyberFont,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: isDark ? Colors.white : p.text,
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 10, bottom: 6),
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF334155) : p.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      'Unit ${unit.number}',
-                      style: TextStyle(
-                        fontFamily: HedgeTokens.cyberFont,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: cyan,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            shift == 1 ? '☀️ Pilih Pramudi Pagi' : '🌙 Pilih Pramudi Siang',
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isDark ? Colors.white : p.text,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: cyan.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: cyan.withValues(alpha: 0.4)),
+                            ),
+                            child: Text(
+                              'Unit ${unit.number}',
+                              style: TextStyle(
+                                fontFamily: HedgeTokens.cyberFont,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12,
+                                color: cyan,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    // Search Bar
+                    if (route.drivers.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: TextField(
+                          style: TextStyle(
+                            fontFamily: HedgeTokens.cyberFont,
+                            fontSize: 13,
+                            color: isDark ? Colors.white : p.text,
+                          ),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.search, size: 18, color: cyan),
+                            suffixIcon: searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, size: 16),
+                                    onPressed: () => setModalState(() => searchQuery = ''),
+                                  )
+                                : null,
+                            hintText: 'Cari nama supir...',
+                            hintStyle: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontSize: 12,
+                              color: isDark ? const Color(0xFF64748B) : p.muted,
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF070B12) : p.raised,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: cyan.withValues(alpha: isDark ? 0.25 : 0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: cyan, width: 1.2),
+                            ),
+                          ),
+                          onChanged: (v) => setModalState(() => searchQuery = v),
+                        ),
+                      ),
+                    const Divider(height: 8),
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.person_off_outlined, color: Colors.redAccent, size: 20),
+                      title: const Text('Kosongkan Slot Supir', style: TextStyle(fontSize: 13, color: Colors.redAccent)),
+                      subtitle: const Text('Batalkan penugasan pada unit ini', style: TextStyle(fontSize: 10.5, color: Colors.redAccent)),
+                      onTap: () => Navigator.pop(ctx, '__empty__'),
+                    ),
+                    if (route.drivers.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Center(
+                          child: Text(
+                            'Belum ada master pramudi pada rute ini.\nBuka "Kelola Pramudi" untuk menambah.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: p.muted),
+                          ),
+                        ),
+                      )
+                    else if (filteredDrivers.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Text(
+                            'Tidak ada supir dengan kata kunci "$searchQuery"',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: HedgeTokens.cyberFont,
+                              fontSize: 12,
+                              color: isDark ? const Color(0xFF94A3B8) : p.muted,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: filteredDrivers.length,
+                          itemBuilder: (context, idx) {
+                            final driver = filteredDrivers[idx];
+                            final isCurrent = shift == 1
+                                ? unit.driverShift1Id == driver.id
+                                : unit.driverShift2Id == driver.id;
+                            return ListTile(
+                              dense: true,
+                              leading: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: cyan.withValues(alpha: 0.2),
+                                child: Text(
+                                  driver.callName.isNotEmpty ? driver.callName[0].toUpperCase() : '?',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cyan),
+                                ),
+                              ),
+                              title: Text(
+                                driver.callName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                  color: isCurrent ? cyan : (isDark ? Colors.white : p.text),
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${driver.fullName} · ${driver.status.name.toUpperCase()}',
+                                style: TextStyle(fontSize: 11, color: p.muted),
+                              ),
+                              trailing: isCurrent ? Icon(Icons.check, color: cyan, size: 18) : null,
+                              onTap: () => Navigator.pop(ctx, driver.id),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const Divider(height: 1),
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.person_off_outlined, color: Colors.redAccent, size: 20),
-                title: const Text('Kosongkan', style: TextStyle(fontSize: 13, color: Colors.redAccent)),
-                onTap: () => Navigator.pop(ctx, '__empty__'),
-              ),
-              if (route.drivers.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text(
-                      'Belum ada master pramudi pada rute ini.\nBuka "Kelola Pramudi" untuk menambah.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: p.muted),
-                    ),
-                  ),
-                )
-              else
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: route.drivers.length,
-                    itemBuilder: (context, idx) {
-                      final driver = route.drivers[idx];
-                      final isCurrent = shift == 1
-                          ? unit.driverShift1Id == driver.id
-                          : unit.driverShift2Id == driver.id;
-                      return ListTile(
-                        dense: true,
-                        leading: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: cyan.withValues(alpha: 0.2),
-                          child: Text(
-                            driver.callName.isNotEmpty ? driver.callName[0].toUpperCase() : '?',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cyan),
-                          ),
-                        ),
-                        title: Text(
-                          driver.callName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                            color: isCurrent ? cyan : (isDark ? Colors.white : p.text),
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${driver.fullName} · ${driver.status.name.toUpperCase()}',
-                          style: TextStyle(fontSize: 11, color: p.muted),
-                        ),
-                        trailing: isCurrent ? Icon(Icons.check, color: cyan, size: 18) : null,
-                        onTap: () => Navigator.pop(ctx, driver.id),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

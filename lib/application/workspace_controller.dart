@@ -282,15 +282,40 @@ class WorkspaceController extends Notifier<AppState> {
     } catch (_) {}
   }
 
-  Future<bool> syncDriversToCloud(HedgeRoute route) async {
+  Future<({bool success, int totalDrivers, int totalRoutes, String? error})> syncAllDriversToCloud([HedgeRoute? priorityRoute]) async {
     try {
       final client = ref.read(cloudSyncClientProvider);
-      await client.pushDrivers(route.id, route.drivers);
-      return true;
+      final allRoutes = List<HedgeRoute>.from(state.workspace.routes);
+      if (priorityRoute != null) {
+        final idx = allRoutes.indexWhere((r) => r.id == priorityRoute.id);
+        if (idx >= 0) {
+          allRoutes[idx] = priorityRoute;
+        } else {
+          allRoutes.add(priorityRoute);
+        }
+      }
+
+      final routesWithDrivers = allRoutes.where((r) => r.drivers.isNotEmpty).toList();
+      if (routesWithDrivers.isEmpty) {
+        return (success: true, totalDrivers: 0, totalRoutes: 0, error: 'Tidak ada data pramudi tersimpan di perangkat.');
+      }
+
+      int totalSynced = 0;
+      for (final r in routesWithDrivers) {
+        await client.pushDrivers(r.id, r.drivers);
+        totalSynced += r.drivers.length;
+      }
+
+      return (success: true, totalDrivers: totalSynced, totalRoutes: routesWithDrivers.length, error: null);
     } catch (e) {
-      debugPrint('Sync drivers gagal: $e');
-      return false;
+      debugPrint('Sync all drivers gagal: $e');
+      return (success: false, totalDrivers: 0, totalRoutes: 0, error: e.toString());
     }
+  }
+
+  Future<bool> syncDriversToCloud(HedgeRoute route) async {
+    final res = await syncAllDriversToCloud(route);
+    return res.success;
   }
 
   Future<bool> addDriver(HedgeRoute route, Driver driver) {

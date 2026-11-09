@@ -8,6 +8,7 @@ abstract interface class CloudSyncClient {
   Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since);
   Future<void> pushOutbox(List<Map<String, dynamic>> items);
   Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers);
+  Future<int> pushAllDrivers(List<HedgeRoute> routes);
   Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId);
 }
 
@@ -68,9 +69,10 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
 
   @override
   Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
-    if (drivers.isEmpty) return;
     final db = _firestore;
-    if (db == null) return;
+    if (db == null) {
+      throw StateError('Firebase Cloud Firestore belum terinisialisasi.');
+    }
     try {
       String routeDocId = routeIdentifier;
       final isUuid = RegExp(
@@ -91,8 +93,16 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
         if (snapshot.docs.isNotEmpty) {
           routeDocId = snapshot.docs.first.id;
         } else {
-          debugPrint('pushDrivers: Route document tidak ditemukan untuk $routeIdentifier');
-          return;
+          final snapshotId = await db
+              .collection('routes')
+              .where('id', isEqualTo: routeIdentifier)
+              .limit(1)
+              .get();
+          if (snapshotId.docs.isNotEmpty) {
+            routeDocId = snapshotId.docs.first.id;
+          } else {
+            throw StateError('Rute "$routeIdentifier" tidak ditemukan di database Cloud.');
+          }
         }
       }
 
@@ -118,6 +128,18 @@ class FirestoreCloudSyncClient implements CloudSyncClient {
       debugPrint('FirestoreCloudSyncClient pushDrivers error: $e');
       rethrow;
     }
+  }
+
+  @override
+  Future<int> pushAllDrivers(List<HedgeRoute> routes) async {
+    int total = 0;
+    for (final route in routes) {
+      if (route.drivers.isNotEmpty) {
+        await pushDrivers(route.id, route.drivers);
+        total += route.drivers.length;
+      }
+    }
+    return total;
   }
 
   @override
@@ -263,6 +285,18 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
       debugPrint('SupabaseCloudSyncClient pushDrivers error: $e');
       rethrow;
     }
+  }
+
+  @override
+  Future<int> pushAllDrivers(List<HedgeRoute> routes) async {
+    int total = 0;
+    for (final route in routes) {
+      if (route.drivers.isNotEmpty) {
+        await pushDrivers(route.id, route.drivers);
+        total += route.drivers.length;
+      }
+    }
+    return total;
   }
 
   @override
