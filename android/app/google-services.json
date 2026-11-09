@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "817255308741",
+    "project_id": "hedge-mikrotrans",
+    "storage_bucket": "hedge-mikrotrans.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817255308741:android:25fe405b93217ad056bfac",
+        "android_client_info": {
+          "package_name": "id.mikrotrans.hedge.hedge_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBobCwA6QK-3g015kwJz73EGbdJLt6NwJs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
