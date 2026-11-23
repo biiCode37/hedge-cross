@@ -2,13 +2,13 @@
 
 By Mikrotrans Utara. Migrasi native Android, iOS, dan Windows dari HEDGE web/PWA.
 
-Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru **2.2.0+23 / 2.2.0** memuat independensi volume suara Text-To-Speech (TTS) ke saluran STREAM_ALARM dengan auto-boost & audio ducking, serta penataan ulang visual dan integrasi nama pramudi pada Papan HEDGE (FIDS Kiosk). Paket APK release terbaru dibangun pada 2026-11-09 setelah perintah eksplisit user. Lihat [paket dan bukti build terbaru](docs/build-2.2.0-2026-11-09.md).
+Implementasi berada di `D:/MINE/HEDGE-FLUTTER`, branch **devmode**. Flutter 3.38.5 / Dart 3.10.4. Source dan APK terbaru **2.2.1+24 / 2.2.1** memuat pengalihan cloud backend kembali ke Supabase PostgreSQL (`mkffwfvaxuqifflpeaib.supabase.co`), migrasi lengkap 69 data pramudi riil JAK.115, serta pemeliharaan independensi volume suara TTS. Paket APK release terbaru dibangun pada 2026-11-23 setelah perintah eksplisit user. Lihat [paket dan bukti build terbaru](docs/build-2.2.1-2026-11-23.md).
 
 ## Mulai Menggunakan
 
-Android adalah target utama di lapangan. Paket APK siap instalasi tersedia di [`apks/v2.2.0/hedge-v2.2.0.apk`](apks/v2.2.0/hedge-v2.2.0.apk) (sekitar 67.7 MB, SHA-256 terverifikasi di dokumen build). Pasang APK langsung ke smartphone dispatcher Android.
+Android adalah target utama di lapangan. Paket APK siap instalasi tersedia di [`apks/v2.2.1/hedge-v2.2.1.apk`](apks/v2.2.1/hedge-v2.2.1.apk) (sekitar 69.3 MB, SHA-256 terverifikasi di dokumen build). Pasang APK langsung ke smartphone dispatcher Android.
 
-Data awal mencakup 18 rute resmi Mikrotrans Jakarta Utara (JAK.01 s.d. JAK.120) dengan 586 armada unit dan data pramudi riil yang tersinkronisasi otomatis via Cloud Firestore. Tanggal dan jam jadwal menggunakan Asia/Jakarta (WIB), terlepas dari zona waktu komputer/perangkat.
+Data awal mencakup 18 rute resmi Mikrotrans Jakarta Utara (JAK.01 s.d. JAK.120) dengan 586 armada unit dan data pramudi riil yang tersinkronisasi otomatis via Supabase PostgreSQL. Tanggal dan jam jadwal menggunakan Asia/Jakarta (WIB), terlepas dari zona waktu komputer/perangkat.
 
 1. **Login 1-Ketukan Google:** Masuk menggunakan akun Google dispatcher yang telah terdaftar di whitelist.
 2. Pilih rute dan tanggal layanan di Cockpit.
@@ -25,8 +25,8 @@ Data awal mencakup 18 rute resmi Mikrotrans Jakarta Utara (JAK.01 s.d. JAK.120) 
 ## Arsitektur Data (Offline-First Hybrid)
 
 - **Database Lokal (Perangkat):** Drift / SQLite (`hedge_v2.sqlite`) dalam mode WAL (*Write-Ahead Logging*). Berfungsi sebagai *Single Source of Truth* utama di perangkat, menjamin operasional tetap instan dan berjalan 100% lancar walau tanpa sinyal internet di terminal atau garasi.
-- **Database Cloud (Server):** Google Cloud Firestore (Project `hedge-mikrotrans`, Region `asia-southeast2` Jakarta). Mengelola sinkronisasi master rute, armada, pramudi, antrean outbox, dan whitelist dispatcher tanpa risiko suspend/sleep otomatis.
-- **Autentikasi:** Native Google Sign-In terintegrasi dengan Firebase Authentication dan pemeriksaan whitelist izin akses $O(1)$ di koleksi `authorized_dispatchers`.
+- **Database Cloud (Server):** Supabase PostgreSQL (Project `https://mkffwfvaxuqifflpeaib.supabase.co`). Mengelola sinkronisasi master rute, armada, pramudi, antrean outbox, dan whitelist dispatcher.
+- **Autentikasi:** Native Google Sign-In terintegrasi dengan Supabase Authentication dan pemeriksaan whitelist izin akses $O(1)$ di tabel `authorized_dispatchers`.
 
 ## Design System
 
@@ -43,7 +43,7 @@ cd /d/MINE/HEDGE-FLUTTER
 git branch --show-current  # Wajib 'devmode'
 flutter pub get
 flutter analyze           # Verifikasi 0 issues
-flutter test              # Verifikasi 142/142 test lulus
+flutter test              # Verifikasi 145/145 test lulus
 flutter run -d windows    # Uji coba desktop Windows
 ```
 
@@ -54,8 +54,8 @@ flutter run -d windows    # Uji coba desktop Windows
 
 - `lib/domain`: model data immutable (`HedgeRoute`, `FleetUnit`, `Driver`), waktu WIB, dan algoritma scheduler pure Dart.
 - `lib/application`: state management Riverpod (`WorkspaceController`, `AuthController`, `SyncController`), adapter notifikasi audio & alarm.
-- `lib/data`: Drift/SQLite repository, `FirebaseAuthService`, `FirestoreCloudSyncClient`, export/import service.
+- `lib/data`: Drift/SQLite repository, `SupabaseAuthService`, `SupabaseCloudSyncClient`, export/import service.
 - `lib/ui`: antarmuka Cockpit F-35, Board, Configuration sheet, Master Pramudi, Login, dan Guard Whitelist.
-- `test`: 142 skenario pengujian unit dan widget di kedua tema (Dark & Light).
+- `test`: 145 skenario pengujian unit dan widget di kedua tema (Dark & Light).
 - `docs/refactor/`: catatan teknis investigasi masalah, solusi arsitektur, verifikasi pengujian, dan analogi non-teknis.
 - `apks/`: arsip paket APK resmi per versi folder (misal `apks/v2.1.8/hedge-v2.1.8.apk`).

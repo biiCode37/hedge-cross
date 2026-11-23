@@ -7,7 +7,6 @@ plugins {
 android {
     namespace = "id.mikrotrans.hedge.hedge_flutter"
     compileSdk = 36
-    ndkVersion = "28.2.13676358"
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
