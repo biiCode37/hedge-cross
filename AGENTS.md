@@ -84,17 +84,15 @@ Setiap folder sesi temuan wajib memuat **4 file inti**:
 
 ---
 
-## 7. Aturan Penggunaan Backend Cloud Firebase HEDGE (`hedge-mikrotrans`) (WAJIB)
+## 7. Aturan Penggunaan Backend Cloud Supabase HEDGE (`hedge-cross`) (WAJIB)
 
 - **Target Proyek Cloud Definitif:**
-  - Backend cloud HEDGE resmi menggunakan **Google Firebase (Spark Plan - Permanen Gratis)**:
-    - **Project Name:** `HEDGE Mikrotrans`
-    - **Project ID:** `hedge-mikrotrans`
-    - **Project Number:** `817255308741`
-    - **Region:** `asia-southeast2` (Jakarta)
-    - **Layanan Aktif:** Cloud Firestore (Native Mode), Firebase Authentication (Google Sign-In)
-    - **MCP Connector:** `firebase-mcp-server`
-- **Status Proyek Supabase (`hedge-cross`):**
-  - Proyek Supabase lama (`mkffwfvaxuqifflpeaib`) telah **dinonaktifkan** dan seluruh data masternya (dispatcher, rute, unit, supir) telah dimigrasikan secara utuh ke Cloud Firestore `hedge-mikrotrans`.
-- **LARANGAN KERAS:**
-  - Agen **DILARANG KERAS** menjalankan migrasi, modifikasi schema, atau operasi data ke proyek Firebase atau database cloud lain di luar `hedge-mikrotrans`.
+  - Backend cloud HEDGE resmi dialihkan kembali menggunakan **Supabase PostgreSQL**:
+    - **Project URL:** `https://mkffwfvaxuqifflpeaib.supabase.co`
+    - **Publishable Key:** `sb_publishable_g0BlvGNUb-uK98bvgc0gmQ_ahCSH3xD`
+    - **Layanan Aktif:** Supabase PostgREST Database (Tabel `master_drivers`), Supabase Authentication
+    - **Klien Runtime:** `SupabaseCloudSyncClient` dan `SupabaseAuthService`
+- **Status Proyek Firebase Firestore:**
+  - Proyek Firebase (`hedge-mikrotrans`) dinonaktifkan dari alur runtime utama (dormant).
+  - Seluruh 69 data pramudi riil (58 tetap, 11 cadangan) telah dimigrasikan dari Firestore ke tabel `master_drivers` Supabase.
+  - Dependensi Firebase di `pubspec.yaml` dipertahankan tanpa dihapus agar build Android tetap stabil tanpa konflik konfigurasi gradle.

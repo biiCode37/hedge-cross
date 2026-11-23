@@ -198,12 +198,42 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
   SupabaseCloudSyncClient({SupabaseClient? client}) : _client = client;
 
   final SupabaseClient? _client;
-  SupabaseClient get _supabase => _client ?? Supabase.instance.client;
+  SupabaseClient? get _supabase {
+    try {
+      return _client ?? Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Pemetaan statis kode rute ke UUID untuk fallback offline/saat master_routes kosong
+  static const Map<String, String> _catalogRouteUuids = {
+    'JAK.01': '81128634-e279-4a94-8a96-771ad974998a',
+    'JAK.05': '839e4364-c4cb-4ac5-ac1e-99468bcbacf0',
+    'JAK.110A': 'feae622c-a605-4323-833b-7a1e85d9090f',
+    'JAK.113': 'bb786943-46f7-49f0-9e20-4ea03477b2ab',
+    'JAK.115': 'd2c14c0e-0bfe-42a5-b7da-8f40fa212e8a',
+    'JAK.117': '7a583fe5-1d99-40c9-a2c0-688b3d751a7f',
+    'JAK.118': '63ed5228-714c-4962-87d5-035f552b784d',
+    'JAK.120': '469ec84b-d65b-4ac2-94cb-356ae25e0779',
+    'JAK.15': 'bcb994a0-281e-4ef2-b460-97527898f0ee',
+    'JAK.29': '7c25e3e9-a5ed-4b35-9acc-6855193309b9',
+    'JAK.58': 'a9732ad1-f1d8-47d5-9c92-ae6f8030a1b9',
+    'JAK.60': 'cdf02d4c-c8e6-4144-a099-dc76ac2c01a2',
+    'JAK.76': '6807ab0e-6745-4989-9432-d4e1231d7cb0',
+    'JAK.77': 'a28444e3-501c-48f8-83d4-00cd7a243837',
+    'JAK.87': '91c38d28-f0d6-475d-9423-02281ee1e7f3',
+    'JAK.88': 'df769254-1cac-481a-8dcc-89a1bbdfd27e',
+    'JAK.89': '4ec45c1f-5e72-46c1-b669-53d1af60ac94',
+    'JAK.90': '106c6f31-52f5-40a1-be71-fbcd85dfdf9f',
+  };
 
   @override
   Future<List<Map<String, dynamic>>> pullRoutes(DateTime? since) async {
+    final client = _supabase;
+    if (client == null) return const [];
     try {
-      var query = _supabase
+      var query = client
           .from('master_routes')
           .select('*, master_units(*), master_drivers(*)');
 
@@ -212,7 +242,27 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
       }
 
       final res = await query.order('position', ascending: true);
-      return List<Map<String, dynamic>>.from(res as List);
+      final list = List<Map<String, dynamic>>.from(res as List);
+      if (list.isNotEmpty) return list;
+
+      // Fallback Cerdas: Jika master_routes belum di-seed, tarik langsung data master_drivers
+      final driversRes = await client.from('master_drivers').select();
+      final rawDrivers = List<Map<String, dynamic>>.from(driversRes as List);
+      if (rawDrivers.isNotEmpty) {
+        final grouped = <String, List<Map<String, dynamic>>>{};
+        for (final d in rawDrivers) {
+          final rUuid = d['route_uuid']?.toString() ?? '';
+          if (rUuid.isNotEmpty) {
+            grouped.putIfAbsent(rUuid, () => []).add(d);
+          }
+        }
+        return grouped.entries.map((e) => {
+          'uuid': e.key,
+          'drivers': e.value,
+        }).toList();
+      }
+
+      return const [];
     } catch (e) {
       debugPrint('SupabaseCloudSyncClient pullRoutes error: $e');
       rethrow;
@@ -222,8 +272,10 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
   @override
   Future<void> pushOutbox(List<Map<String, dynamic>> items) async {
     if (items.isEmpty) return;
+    final client = _supabase;
+    if (client == null) return;
     try {
-      await _supabase.from('outbox').insert(items);
+      await client.from('outbox').insert(items);
     } catch (e) {
       debugPrint('SupabaseCloudSyncClient pushOutbox error: $e');
       rethrow;
@@ -233,6 +285,10 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
   @override
   Future<void> pushDrivers(String routeIdentifier, List<Driver> drivers) async {
     if (drivers.isEmpty) return;
+    final client = _supabase;
+    if (client == null) {
+      throw StateError('Supabase Client belum terinisialisasi.');
+    }
     try {
       String routeUuid = routeIdentifier;
       final isUuid = RegExp(
@@ -244,17 +300,20 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
             : (routeIdentifier.contains('-')
                 ? routeIdentifier.split('-').first.trim()
                 : routeIdentifier.trim());
-        final res = await _supabase
-            .from('master_routes')
-            .select('uuid')
-            .ilike('route_code', '$code%')
-            .limit(1)
-            .maybeSingle();
-        if (res != null && res['uuid'] != null) {
-          routeUuid = res['uuid'] as String;
-        } else {
-          debugPrint('pushDrivers: Route UUID tidak ditemukan untuk $routeIdentifier');
-          return;
+        try {
+          final res = await client
+              .from('master_routes')
+              .select('uuid')
+              .ilike('route_code', '$code%')
+              .limit(1)
+              .maybeSingle();
+          if (res != null && res['uuid'] != null) {
+            routeUuid = res['uuid'] as String;
+          } else {
+            routeUuid = _catalogRouteUuids[code] ?? routeIdentifier;
+          }
+        } catch (_) {
+          routeUuid = _catalogRouteUuids[code] ?? routeIdentifier;
         }
       }
 
@@ -277,7 +336,7 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
         return map;
       }).toList();
 
-      await _supabase.from('master_drivers').upsert(
+      await client.from('master_drivers').upsert(
         payload,
         onConflict: 'route_uuid,call_name',
       );
@@ -301,6 +360,8 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
 
   @override
   Future<void> deleteDriverCloud(String routeIdentifier, String driverCallNameOrId) async {
+    final client = _supabase;
+    if (client == null) return;
     try {
       String routeUuid = routeIdentifier;
       final isUuid = RegExp(
@@ -312,20 +373,24 @@ class SupabaseCloudSyncClient implements CloudSyncClient {
             : (routeIdentifier.contains('-')
                 ? routeIdentifier.split('-').first.trim()
                 : routeIdentifier.trim());
-        final res = await _supabase
-            .from('master_routes')
-            .select('uuid')
-            .ilike('route_code', '$code%')
-            .limit(1)
-            .maybeSingle();
-        if (res != null && res['uuid'] != null) {
-          routeUuid = res['uuid'] as String;
-        } else {
-          return;
+        try {
+          final res = await client
+              .from('master_routes')
+              .select('uuid')
+              .ilike('route_code', '$code%')
+              .limit(1)
+              .maybeSingle();
+          if (res != null && res['uuid'] != null) {
+            routeUuid = res['uuid'] as String;
+          } else {
+            routeUuid = _catalogRouteUuids[code] ?? routeIdentifier;
+          }
+        } catch (_) {
+          routeUuid = _catalogRouteUuids[code] ?? routeIdentifier;
         }
       }
 
-      await _supabase
+      await client
           .from('master_drivers')
           .delete()
           .eq('route_uuid', routeUuid)
@@ -428,7 +493,9 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
       shiftChangeTime: rawConfig['shiftChangeTime'] as String? ?? '13:00',
     );
 
-    final existingIndex = updatedRoutes.indexWhere((r) => r.id == uuid || r.name.startsWith(code));
+    final existingIndex = updatedRoutes.indexWhere(
+      (r) => r.id == uuid || (r.name.startsWith(code) && code != 'RUTE'),
+    );
 
     if (existingIndex >= 0) {
       final existing = updatedRoutes[existingIndex];
@@ -444,15 +511,28 @@ List<HedgeRoute> mergeCloudRoutesIntoLocal({
               }
               return u;
             }).toList()
-          : existing.units;
+          : existing.units.map((u) {
+              String? shift1Id = u.driverShift1Id;
+              String? shift2Id = u.driverShift2Id;
+              for (final d in drivers) {
+                if (d.active && d.defaultUnitNumber == u.number) {
+                  if (d.defaultShift == 1 && shift1Id == null) shift1Id = d.id;
+                  if (d.defaultShift == 2 && shift2Id == null) shift2Id = d.id;
+                }
+              }
+              return u.copyWith(
+                driverShift1Id: shift1Id,
+                driverShift2Id: shift2Id,
+              );
+            }).toList();
 
       updatedRoutes[existingIndex] = existing.copyWith(
-        name: displayName,
-        color: color,
+        name: raw['route_code'] != null ? displayName : existing.name,
+        color: raw['color'] != null ? color : existing.color,
         units: mergedUnits,
         order: order.isNotEmpty ? order : existing.order,
         drivers: drivers.isNotEmpty ? drivers : existing.drivers,
-        config: config,
+        config: raw['config'] != null ? config : existing.config,
       );
     } else {
       var newRoute = HedgeRoute(

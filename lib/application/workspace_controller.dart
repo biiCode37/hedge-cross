@@ -14,7 +14,7 @@ final initialWorkspaceProvider = Provider<Workspace>(
   (ref) => throw StateError('Workspace belum dimuat.'),
 );
 final cloudSyncClientProvider = Provider<CloudSyncClient>(
-  (ref) => FirestoreCloudSyncClient(),
+  (ref) => SupabaseCloudSyncClient(),
 );
 final clockProvider = StreamProvider<DateTime>((ref) async* {
   yield DateTime.now();
