@@ -313,6 +313,43 @@ class WorkspaceController extends Notifier<AppState> {
     }
   }
 
+  Future<({bool success, int totalDrivers, int totalRoutes, String? error})> pullDriversFromCloud([HedgeRoute? priorityRoute]) async {
+    try {
+      final client = ref.read(cloudSyncClientProvider);
+      final cloudRoutes = await client.pullRoutes(null);
+      if (cloudRoutes.isEmpty) {
+        return (success: true, totalDrivers: 0, totalRoutes: 0, error: 'Tidak ada data rute atau pramudi ditemukan di cloud.');
+      }
+
+      final now = DateTime.now();
+      final mergedRoutes = mergeCloudRoutesIntoLocal(
+        currentRoutes: state.workspace.routes,
+        cloudRoutes: cloudRoutes,
+        now: now,
+      );
+
+      final nextWorkspace = state.workspace.copyWith(routes: mergedRoutes);
+      final saved = await _save(nextWorkspace);
+      if (!saved) {
+        return (success: false, totalDrivers: 0, totalRoutes: 0, error: 'Gagal menyimpan data ke database lokal.');
+      }
+
+      int totalLoaded = 0;
+      int routesCount = 0;
+      for (final r in mergedRoutes) {
+        if (r.drivers.isNotEmpty) {
+          totalLoaded += r.drivers.length;
+          routesCount++;
+        }
+      }
+
+      return (success: true, totalDrivers: totalLoaded, totalRoutes: routesCount, error: null);
+    } catch (e) {
+      debugPrint('Pull drivers from cloud gagal: $e');
+      return (success: false, totalDrivers: 0, totalRoutes: 0, error: e.toString());
+    }
+  }
+
   Future<bool> syncDriversToCloud(HedgeRoute route) async {
     final res = await syncAllDriversToCloud(route);
     return res.success;

@@ -114,6 +114,106 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                 ),
                 IconButton.filled(
                   style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E5FF).withValues(alpha: isDark ? 0.2 : 0.15),
+                    foregroundColor: const Color(0xFF00E5FF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
+                    ),
+                  ),
+                  tooltip: 'Tarik Semua Pramudi dari Cloud Supabase',
+                  onPressed: _isSyncing
+                      ? null
+                      : () async {
+                          setState(() => _isSyncing = true);
+                          try {
+                            final res = await ref
+                                .read(workspaceProvider.notifier)
+                                .pullDriversFromCloud(currentRoute);
+                            if (!context.mounted) return;
+                            setState(() => _isSyncing = false);
+
+                            await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: isDark ? const Color(0xFF0C1017) : p.surface,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: res.success ? const Color(0xFF00E5FF) : Colors.redAccent,
+                                    width: 1.2,
+                                  ),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(
+                                      res.success ? Icons.cloud_done : Icons.cloud_off,
+                                      color: res.success ? const Color(0xFF00E5FF) : Colors.redAccent,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      res.success ? 'Berhasil Diunduh' : 'Unduh Cloud Gagal',
+                                      style: TextStyle(
+                                        fontFamily: HedgeTokens.cyberFont,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: isDark ? Colors.white : p.text,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                content: Text(
+                                  res.success
+                                      ? 'Berhasil mengunduh total ${res.totalDrivers} pramudi dari ${res.totalRoutes} rute di Cloud Supabase ke perangkat!'
+                                      : 'Gagal mengunduh master pramudi dari Cloud:\n${res.error ?? "Periksa koneksi internet."}',
+                                  style: TextStyle(
+                                    fontFamily: HedgeTokens.cyberFont,
+                                    fontSize: 13,
+                                    color: isDark ? const Color(0xFFCBD5E1) : p.text,
+                                  ),
+                                ),
+                                actions: [
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: res.success ? const Color(0xFF00E5FF) : Colors.redAccent,
+                                      foregroundColor: res.success ? Colors.black : Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            setState(() => _isSyncing = false);
+                            await showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text('Terjadi kesalahan: $e'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                  icon: _isSyncing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                          ),
+                        )
+                      : const Icon(Icons.cloud_download_outlined, size: 18),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.15),
                     foregroundColor: const Color(0xFF10B981),
                     shape: RoundedRectangleBorder(
@@ -121,7 +221,7 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                       side: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                     ),
                   ),
-                  tooltip: 'Setorkan Semua Pramudi ke Cloud Firebase',
+                  tooltip: 'Setorkan Semua Pramudi ke Cloud Supabase',
                   onPressed: _isSyncing
                       ? null
                       : () async {
@@ -165,7 +265,7 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                                 ),
                                 content: Text(
                                   res.success
-                                      ? 'Total ${res.totalDrivers} pramudi dari ${res.totalRoutes} rute berhasil disetorkan ke Cloud Firebase!'
+                                      ? 'Total ${res.totalDrivers} pramudi dari ${res.totalRoutes} rute berhasil disetorkan ke Cloud Supabase!'
                                       : 'Gagal mengirim master pramudi ke Cloud:\n${res.error ?? "Periksa koneksi internet."}',
                                   style: TextStyle(
                                     fontFamily: HedgeTokens.cyberFont,
@@ -482,6 +582,7 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
     String? selectedUnit = existing?.defaultUnitNumber;
     var status = existing?.status ?? DriverStatus.tetap;
     var shift = existing?.defaultShift ?? 1;
+    String? formError;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -508,6 +609,29 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (formError != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.redAccent, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                formError!,
+                                style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
@@ -524,6 +648,9 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                         hintText: 'Contoh: Bambang',
                       ),
                       textCapitalization: TextCapitalization.words,
+                      onChanged: (_) {
+                        if (formError != null) setDialogState(() => formError = null);
+                      },
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -582,7 +709,19 @@ class _DriverMasterSheetState extends ConsumerState<DriverMasterSheet> {
                   ),
                   onPressed: () {
                     final callName = callController.text.trim();
-                    if (callName.isEmpty) return;
+                    if (callName.isEmpty) {
+                      setDialogState(() => formError = 'Nama panggilan wajib diisi.');
+                      return;
+                    }
+                    final isDuplicate = route.drivers.any(
+                      (d) => d.id != existing?.id && d.callName.trim().toLowerCase() == callName.toLowerCase(),
+                    );
+                    if (isDuplicate) {
+                      setDialogState(() {
+                        formError = 'Nama panggilan "$callName" sudah digunakan pramudi lain di rute ini.';
+                      });
+                      return;
+                    }
                     Navigator.pop(ctx, true);
                   },
                   child: const Text('Simpan'),

@@ -106,6 +106,29 @@ class LocalSessionAuthService implements AuthService {
   }
 }
 
+String friendlyAuthErrorMessage(Object error) {
+  final msg = error.toString().toLowerCase();
+  if (msg.contains('network') ||
+      msg.contains('socketexception') ||
+      msg.contains('timeout') ||
+      msg.contains('connection')) {
+    return 'Koneksi internet bermasalah. Pastikan perangkat Anda terhubung ke internet lalu coba lagi.';
+  }
+  if (msg.contains('canceled') ||
+      msg.contains('cancelled') ||
+      msg.contains('dibatalkan') ||
+      msg.contains('12501')) {
+    return '';
+  }
+  if (msg.contains('sign_in_failed') || msg.contains('10:') || msg.contains('12500')) {
+    return 'Layanan Google Sign-In sedang tidak merespons. Periksa koneksi internet atau coba beberapa saat lagi.';
+  }
+  if (msg.contains('permission') || msg.contains('denied') || msg.contains('security policy')) {
+    return 'Izin akses database dibatasi. Hubungi Koordinator Lapangan untuk persetujuan akun.';
+  }
+  return 'Gagal masuk dengan Google: $error';
+}
+
 class FirebaseAuthService implements AuthService {
   FirebaseAuthService({
     required SessionStorage storage,
@@ -168,7 +191,8 @@ class FirebaseAuthService implements AuthService {
           final doc = await firestoreClient
               .collection('authorized_dispatchers')
               .doc(email.trim().toLowerCase())
-              .get();
+              .get()
+              .timeout(const Duration(seconds: 3));
 
           if (doc.exists && doc.data() != null) {
             final data = Map<String, dynamic>.from(doc.data()!);
@@ -185,7 +209,7 @@ class FirebaseAuthService implements AuthService {
             );
           }
         } catch (e) {
-          debugPrint('Gagal sync status whitelist online Firestore, memakai sesi lokal: $e');
+          debugPrint('Gagal sync status whitelist online Firestore (timeout/offline), memakai sesi lokal: $e');
         }
       }
 
@@ -205,7 +229,8 @@ class FirebaseAuthService implements AuthService {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        return const AuthSessionState(error: 'Masuk dengan Google dibatalkan.');
+        // Pengguna membatalkan pemilihan akun (tekan back/tutup modal); jangan tampilkan banner error merah
+        return const AuthSessionState();
       }
 
       final googleAuth = await googleUser.authentication;
@@ -296,7 +321,11 @@ class FirebaseAuthService implements AuthService {
 
       return const AuthSessionState(error: 'Layanan database tidak tersedia.');
     } catch (e) {
-      return AuthSessionState(error: 'Gagal masuk dengan Google: $e');
+      final friendly = friendlyAuthErrorMessage(e);
+      if (friendly.isEmpty) {
+        return const AuthSessionState();
+      }
+      return AuthSessionState(error: friendly);
     }
   }
 
@@ -430,7 +459,8 @@ class SupabaseAuthService implements AuthService {
     try {
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        return const AuthSessionState(error: 'Masuk dengan Google dibatalkan.');
+        // Pengguna membatalkan pemilihan akun (tekan back/tutup modal); jangan tampilkan banner error merah
+        return const AuthSessionState();
       }
 
       final googleAuth = await googleUser.authentication;
@@ -508,7 +538,11 @@ class SupabaseAuthService implements AuthService {
         return AuthSessionState(user: fallbackPending);
       }
     } catch (e) {
-      return AuthSessionState(error: 'Gagal masuk dengan Google: $e');
+      final friendly = friendlyAuthErrorMessage(e);
+      if (friendly.isEmpty) {
+        return const AuthSessionState();
+      }
+      return AuthSessionState(error: friendly);
     }
   }
 

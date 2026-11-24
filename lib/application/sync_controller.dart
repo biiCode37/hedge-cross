@@ -37,10 +37,13 @@ class SyncController {
   final CloudSyncClient _client;
   SyncState state;
 
-  Future<void> syncNow() async {
+  Future<void> syncNow({Future<void> Function(List<Map<String, dynamic>> rawRoutes)? onRoutesPulled}) async {
     state = state.copyWith(status: SyncStatus.syncing);
     try {
-      await _client.pullRoutes(state.lastSyncedAt);
+      final routes = await _client.pullRoutes(state.lastSyncedAt);
+      if (onRoutesPulled != null && routes.isNotEmpty) {
+        await onRoutesPulled(routes);
+      }
       state = state.copyWith(
         status: SyncStatus.synced,
         lastSyncedAt: DateTime.now(),

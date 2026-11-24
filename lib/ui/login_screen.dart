@@ -70,18 +70,25 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (errorMessage != null) ...[
+              if (errorMessage != null && errorMessage!.trim().isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.15),
+                    color: Colors.redAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(HedgeTokens.radius),
                     border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
                   ),
-                  child: Text(
-                    errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: const TextStyle(color: Colors.redAccent, fontSize: 13, height: 1.3),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),

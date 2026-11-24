@@ -53,12 +53,20 @@ flutter test
 
 ---
 
-## 3. Matriks Whitelist 7 Dispatcher Terverifikasi Aktif
-Koleksi `authorized_dispatchers` di Firestore telah diverifikasi memuat 7 akun operasional:
-1. `biicode37@gmail.com` — Role: `superadmin` (Status: `active`, `is_authorized: true`)
-2. `muhammadabyn37@gmail.com` — Role: `superadmin` (Status: `active`, `is_authorized: true`)
-3. `tj.biipro@gmail.com` — Role: `superadmin` (Status: `active`, `is_authorized: true`)
-4. `biiaby370@gmail.com` — Role: `pdo` (Status: `active`, `is_authorized: true`)
-5. `inputdata.jaklingkotj@gmail.com` — Role: `pdo` (Status: `active`, `is_authorized: true`)
-6. `miqdads92@gmail.com` — Role: `admin` (Status: `active`, `is_authorized: true`)
-7. `bionex37@gmail.com` — Role: `pdo` (Status: `pending`, `is_authorized: false`)
+## 4. Verifikasi Perbaikan Defect UX & Sinkronisasi 2 Arah (Paket 1, 2, 3)
+
+### 4.1. Verifikasi Error Translator & Flow Pembatalan Akun
+- **Test:** Pembatalan akun Google (`googleUser == null`) mengembalikan `AuthSessionState()` bersih tanpa melempar banner merah ke layar login.
+- **Test:** Error teknis (`PlatformException`, `ApiException: 10`, `SocketException`) kini diterjemahkan otomatis menjadi pesan ramah Bahasa Indonesia via `friendlyAuthErrorMessage()`.
+- **Test:** `restoreSession()` kini memiliki batas `timeout(Duration(seconds: 3))` untuk mencegah aplikasi *freeze* saat sinyal internet di terminal lemah.
+- **Test:** `PendingApprovalScreen` kini menampilkan SnackBar hijau konfirmasi saat tombol "Ajukan Permohonan Akses" ditekan.
+
+### 4.2. Verifikasi Fitur "Tarik Data Pramudi dari Cloud Supabase"
+- **Test:** Fungsi `pullDriversFromCloud()` pada `WorkspaceController` berhasil menarik data dari `client.pullRoutes(null)`, menggabungkannya ke `mergeCloudRoutesIntoLocal`, dan menyimpannya permanen ke database Drift SQLite lokal.
+- **Test:** Tombol "Tarik Semua Pramudi dari Cloud Supabase" (`Icons.cloud_download_outlined`) tersedia di header `DriverMasterSheet`.
+- **Test:** Seluruh teks dialog & tooltip telah diselaraskan menyebut "Cloud Supabase".
+
+### 4.3. Verifikasi Validasi Form Anti-Duplikasi Pramudi
+- **Test:** Validasi nama panggilan (`call_name`) mendeteksi duplikasi pada rute yang sama dan menampilkan peringatan visual merah di dalam dialog sebelum data disimpan.
+- **Hasil Flutter Analyze:** **0 issues found**.
+- **Hasil Flutter Test:** **145/145 tests passed** (100% pass rate).

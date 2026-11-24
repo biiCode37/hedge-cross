@@ -17,6 +17,30 @@ class PendingApprovalScreen extends StatelessWidget {
   final VoidCallback onSwitchAccount;
   final bool isRequesting;
 
+  Future<void> _handleRequest(BuildContext context) async {
+    await onRequestAccess();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Permohonan akses berhasil dikirim! Silakan hubungi Koordinator Lapangan untuk persetujuan akun.',
+                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -110,7 +134,7 @@ class PendingApprovalScreen extends StatelessWidget {
               SizedBox(
                 height: HedgeTokens.primaryButtonHeight,
                 child: ElevatedButton.icon(
-                  onPressed: isRequesting ? null : onRequestAccess,
+                  onPressed: isRequesting ? null : () => _handleRequest(context),
                   icon: isRequesting
                       ? const SizedBox(
                           width: 20,
