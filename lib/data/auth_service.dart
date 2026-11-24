@@ -112,7 +112,7 @@ class FirebaseAuthService implements AuthService {
     fb_auth.FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     GoogleSignIn? googleSignIn,
-    String? serverClientId = '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
+    String? serverClientId = '817255308741-ahol6ca8618rojo8o4nst5gs8hsuka25.apps.googleusercontent.com',
   })  : _storage = storage,
         _injectedAuth = auth,
         _injectedFirestore = firestore,
@@ -356,7 +356,7 @@ class SupabaseAuthService implements AuthService {
     required SessionStorage storage,
     SupabaseClient? client,
     GoogleSignIn? googleSignIn,
-    String? serverClientId = '1066127378433-k4iqcmqeepbqdcg8agu2tnhqvq85vj3k.apps.googleusercontent.com',
+    String? serverClientId = '817255308741-ahol6ca8618rojo8o4nst5gs8hsuka25.apps.googleusercontent.com',
   })  : _storage = storage,
         _client = client,
         _googleSignIn = googleSignIn ??
@@ -453,7 +453,7 @@ class SupabaseAuthService implements AuthService {
         debugPrint('Catatan auth Supabase: $authError');
       }
 
-      final email = googleUser.email.trim();
+      final email = googleUser.email.trim().toLowerCase();
       final name = googleUser.displayName?.trim() ?? 'Petugas';
 
       // Periksa email di tabel authorized_dispatchers

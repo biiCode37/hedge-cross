@@ -12,7 +12,20 @@
           "package_name": "id.mikrotrans.hedge.hedge_flutter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "817255308741-5l74ok8rd9kqimc6eu0066r1jeiu0f6q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "id.mikrotrans.hedge.hedge_flutter",
+            "certificate_hash": "71ffe7432e9be6f8be7d855b4953f90e87d5a674"
+          }
+        },
+        {
+          "client_id": "817255308741-ahol6ca8618rojo8o4nst5gs8hsuka25.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBobCwA6QK-3g015kwJz73EGbdJLt6NwJs"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "817255308741-ahol6ca8618rojo8o4nst5gs8hsuka25.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -20,10 +20,21 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    signingConfigs {
+        create("hedgeRelease") {
+            storeFile = file("hedge_debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
     buildTypes {
         release {
-            // Internal trial build. Production distribution requires a dedicated signing key.
-            signingConfig = signingConfigs.getByName("debug")
+            // Mengunci keystore resmi ber-SHA-1 terdaftar di Google Cloud Console
+            signingConfig = signingConfigs.getByName("hedgeRelease")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("hedgeRelease")
         }
     }
 }
